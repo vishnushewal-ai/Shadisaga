@@ -360,24 +360,126 @@ function RegisterPage({ role }) {
 
 function Dashboard() {
   const { user } = useAuth();
+  const [picks, setPicks] = useState([]);
+  useEffect(() => {
+    if (user?.role === "client") {
+      axios.get(`${API}/vendors?limit=6&verified_only=true&min_rating=4.8`).then(r => setPicks(r.data)).catch(()=>{});
+    }
+  }, [user]);
   if (user === null) return <div className="text-center py-20 text-[var(--muted)]">Loading…</div>;
   if (!user) return <Navigate to="/login/client" replace/>;
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const emoji = hour < 12 ? "🌅" : hour < 17 ? "☀️" : "🌙";
   return (
-    <div className="max-w-4xl mx-auto px-6 lg:px-10 py-16" data-testid="dashboard-page">
-      <div className="ornament mb-3"><span>My account</span></div>
-      <h1 className="font-script text-[var(--coral)] text-6xl">Namaste, {user.name}!</h1>
-      <p className="text-[var(--muted)] mt-3">You're signed in as a <strong className="text-[var(--ink)]">{user.role}</strong>.</p>
-      <div className="card-warm p-8 mt-8 space-y-3">
-        <div className="flex justify-between border-b border-[var(--border)] pb-3"><span className="text-[var(--muted)] text-sm">Email</span><span className="font-semibold">{user.email}</span></div>
-        <div className="flex justify-between border-b border-[var(--border)] pb-3"><span className="text-[var(--muted)] text-sm">Role</span><span className="font-semibold capitalize">{user.role}</span></div>
-        {user.phone && <div className="flex justify-between border-b border-[var(--border)] pb-3"><span className="text-[var(--muted)] text-sm">Phone</span><span className="font-semibold">{user.phone}</span></div>}
-        {user.business_name && <div className="flex justify-between border-b border-[var(--border)] pb-3"><span className="text-[var(--muted)] text-sm">Business</span><span className="font-semibold">{user.business_name}</span></div>}
+    <div className="max-w-6xl mx-auto px-6 lg:px-10 py-12" data-testid="dashboard-page">
+      <div className="flex items-center gap-2 text-[var(--coral)] text-xs uppercase tracking-[0.25em] font-bold mb-3">
+        <span className="pulse-heart inline-block">{emoji}</span> {greet}
       </div>
-      <div className="mt-8 flex gap-3 flex-wrap">
+      <h1 className="font-brand brand-gradient text-6xl md:text-7xl leading-none">Namaste, {user.name.split(" ")[0]}!</h1>
+      <p className="text-[var(--muted)] mt-3 text-lg">You're signed in as a <strong className="text-[var(--ink)] capitalize">{user.role}</strong>. Kya haal-chaal?</p>
+
+      <div className="grid md:grid-cols-3 gap-4 mt-8">
+        <div className="card-warm p-5">
+          <div className="text-[10px] uppercase tracking-widest text-[var(--coral)] font-bold mb-1">Email</div>
+          <div className="font-semibold text-sm truncate">{user.email}</div>
+        </div>
+        <div className="card-warm p-5">
+          <div className="text-[10px] uppercase tracking-widest text-[var(--coral)] font-bold mb-1">Role</div>
+          <div className="font-semibold text-sm capitalize">{user.role}</div>
+        </div>
+        <div className="card-warm p-5">
+          <div className="text-[10px] uppercase tracking-widest text-[var(--coral)] font-bold mb-1">{user.role === "vendor" ? "Business" : "Phone"}</div>
+          <div className="font-semibold text-sm truncate">{user.business_name || user.phone || "—"}</div>
+        </div>
+      </div>
+
+      {user.role === "client" && picks.length > 0 && (
+        <div className="mt-12" data-testid="dashboard-picks">
+          <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
+            <div>
+              <div className="ornament mb-2"><span>Fresh picks for you</span></div>
+              <h2 className="font-script text-[var(--coral)] text-4xl md:text-5xl">Top verified vendors</h2>
+            </div>
+            <Link to="/matchmaker" className="btn-gold !py-2.5 !px-5 text-xs"><Sparkles size={14}/> Personalize with AI</Link>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {picks.map(v => <VendorCard key={v.id} vendor={v}/>)}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-10 flex gap-3 flex-wrap">
         <Link to="/vendors" className="btn-primary"><Search size={14}/> Browse Vendors</Link>
         <Link to="/matchmaker" className="btn-outline"><Sparkles size={14}/> AI Matchmaker</Link>
       </div>
     </div>
+  );
+}
+
+// ======================== PERSONAL WELCOME ========================
+function PersonalWelcome() {
+  const { user } = useAuth();
+  const [picks, setPicks] = useState([]);
+  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem("welcome-dismissed") === "1");
+
+  useEffect(() => {
+    if (user && user.role === "client" && !dismissed) {
+      axios.get(`${API}/vendors?limit=3&verified_only=true&min_rating=4.8`)
+        .then(r => setPicks(r.data.slice(0, 3))).catch(()=>{});
+    }
+  }, [user, dismissed]);
+
+  if (!user || user.role !== "client" || dismissed || picks.length === 0) return null;
+
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const emoji = hour < 12 ? "🌅" : hour < 17 ? "☀️" : "🌙";
+  const first = user.name.split(" ")[0];
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 lg:px-10 pt-6" data-testid="personal-welcome">
+      <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[var(--coral-wash)] via-white to-[var(--bg-soft)] border border-[var(--coral-soft)] p-6 md:p-8 fade-up">
+        <button
+          onClick={() => { sessionStorage.setItem("welcome-dismissed","1"); setDismissed(true); }}
+          data-testid="welcome-dismiss"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-[var(--coral-wash)] flex items-center justify-center text-[var(--muted)]">
+          <X size={16}/>
+        </button>
+        <div className="grid md:grid-cols-[1.2fr_2fr] gap-6 items-center">
+          <div>
+            <div className="flex items-center gap-2 text-[var(--coral)] text-xs uppercase tracking-[0.25em] font-bold mb-2">
+              <span className="pulse-heart inline-block">{emoji}</span> {greet}
+            </div>
+            <h2 className="font-brand brand-gradient text-5xl leading-none" data-testid="welcome-name">Namaste, {first}!</h2>
+            <p className="text-[var(--ink-2)] mt-3 text-sm leading-relaxed">
+              3 fresh picks from our top-rated verified vendors — handpicked for your shaadi planning.
+            </p>
+            <Link to="/dashboard" className="btn-outline !py-2.5 !px-4 text-xs mt-4" data-testid="welcome-dashboard">
+              <User size={13}/> My Dashboard <ArrowRight size={12}/>
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {picks.map((v, i) => (
+              <Link key={v.id} to={`/vendor/${v.id}`} data-testid={`welcome-pick-${i}`} className="group bg-white border border-[var(--border)] rounded-xl overflow-hidden hover:border-[var(--coral)] hover:shadow-lg transition-all">
+                <div className="relative h-24 overflow-hidden">
+                  <img src={v.images[0]} alt={v.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
+                  {v.verified && <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[var(--coral)] flex items-center justify-center"><Shield size={10} className="text-white"/></div>}
+                </div>
+                <div className="p-2.5">
+                  <div className="text-[9px] text-[var(--coral)] font-bold uppercase tracking-widest truncate">{v.category}</div>
+                  <div className="font-display text-sm font-600 text-[var(--ink)] truncate leading-tight mt-0.5">{v.name}</div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <div className="text-[10px] text-[var(--muted)] flex items-center gap-0.5"><Star size={9} className="fill-[var(--gold)] text-[var(--gold)]"/> {v.rating}</div>
+                    <div className="text-[10px] font-bold text-[var(--ink)]">{formatINR(v.starting_price)}</div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -407,6 +509,7 @@ function Home() {
 
   return (
     <div data-testid="home-page">
+      <PersonalWelcome/>
       {/* HERO */}
       <section className="relative overflow-hidden" data-testid="home-hero">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-10 lg:pt-20 lg:pb-16 grid lg:grid-cols-[1.05fr_1fr] gap-12 items-center">
