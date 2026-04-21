@@ -203,8 +203,8 @@ input[type="range"].shaadi-range::-moz-range-thumb {
   50%     { transform: translateX(12px) rotate(2deg); }
 }
 @keyframes glow-pulse {
-  0%,100% { filter: drop-shadow(0 0 0 rgba(232,90,114,0)); transform: scale(1); }
-  50%     { filter: drop-shadow(0 0 20px rgba(232,90,114,0.5)); transform: scale(1.04); }
+  0%,100% { filter: drop-shadow(0 0 0 rgba(255,255,255,0)); transform: scale(1); }
+  50%     { filter: drop-shadow(0 0 24px rgba(255,220,180,0.8)); transform: scale(1.04); }
 }
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
@@ -225,6 +225,19 @@ input[type="range"].shaadi-range::-moz-range-thumb {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes ken-burns {
+  0%   { transform: scale(1.0) translate(0, 0); }
+  50%  { transform: scale(1.15) translate(-2%, -3%); }
+  100% { transform: scale(1.08) translate(2%, 1%); }
+}
+@keyframes light-sweep {
+  0%   { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
+}
+@keyframes bokeh {
+  0%,100% { transform: translate(0,0) scale(1); opacity: 0.5; }
+  50%     { transform: translate(10px,-15px) scale(1.2); opacity: 1; }
+}
 
 .hero-canvas {
   position: relative;
@@ -232,38 +245,66 @@ input[type="range"].shaadi-range::-moz-range-thumb {
   aspect-ratio: 4/5;
   border-radius: 28px;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 50% 20%, #FFE1DA 0%, transparent 55%),
-    radial-gradient(ellipse at 20% 85%, #FFD4DC 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 75%, #FFF0D4 0%, transparent 55%),
-    linear-gradient(180deg, #FFF6F4 0%, #FFEEE9 100%);
-  border: 1px solid var(--coral-soft);
-  box-shadow: 0 40px 80px -30px rgba(232,90,114,0.35);
+  border: 4px solid #fff;
+  box-shadow: 0 40px 80px -30px rgba(232,90,114,0.4);
+  background: #000;
 }
-.hero-canvas::before {
-  /* radial mandala */
-  content: "";
+
+/* The wedding image, animated with Ken Burns */
+.hero-img {
   position: absolute; inset: 0;
-  background-image:
-    radial-gradient(circle at 50% 50%, transparent 18%, rgba(212,169,68,0.08) 19%, transparent 20%),
-    radial-gradient(circle at 50% 50%, transparent 28%, rgba(212,169,68,0.06) 29%, transparent 30%),
-    radial-gradient(circle at 50% 50%, transparent 38%, rgba(232,90,114,0.05) 39%, transparent 40%);
-  animation: slow-spin 80s linear infinite;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  animation: ken-burns 20s ease-in-out infinite alternate;
+  transform-origin: center center;
+  will-change: transform;
 }
+
+/* Warm cinematic tint over image */
+.hero-img-tint {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(232,90,114,0.08) 0%, rgba(26,20,22,0.1) 55%, rgba(26,20,22,0.55) 100%),
+    radial-gradient(ellipse at 50% 30%, transparent 40%, rgba(26,20,22,0.35) 100%);
+  pointer-events: none;
+}
+
+/* Animated light sweep */
+.light-sweep {
+  position: absolute; top: 0; left: 0; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,240,210,0.22), transparent);
+  animation: light-sweep 7s ease-in-out infinite;
+  animation-delay: 2s;
+  pointer-events: none;
+}
+
+/* Floating bokeh dots */
+.bokeh {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,230,180,0.9) 0%, rgba(255,230,180,0) 70%);
+  pointer-events: none;
+  animation: bokeh 6s ease-in-out infinite;
+}
+.bokeh.b1 { width: 90px; height: 90px; top: 15%; left: 20%; animation-delay: 0s; }
+.bokeh.b2 { width: 60px; height: 60px; top: 40%; right: 15%; animation-delay: 1.5s; }
+.bokeh.b3 { width: 110px; height: 110px; bottom: 10%; left: 35%; animation-delay: 3s; }
+.bokeh.b4 { width: 50px; height: 50px; top: 60%; left: 10%; animation-delay: 2s; }
 
 .hero-center {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; padding: 30px;
+  z-index: 4;
 }
 
 /* floating flowers/ornaments */
 .petal {
   position: absolute;
-  width: 28px; height: 28px;
+  width: 26px; height: 26px;
   opacity: 0;
   animation: float-up 14s linear infinite;
   pointer-events: none;
+  z-index: 3;
 }
 .petal.p1 { left: 10%; animation-delay: 0s;   animation-duration: 16s; }
 .petal.p2 { left: 25%; animation-delay: 3s;   animation-duration: 13s; }
@@ -274,21 +315,14 @@ input[type="range"].shaadi-range::-moz-range-thumb {
 .petal.p7 { left: 55%; animation-delay: 12s;  animation-duration: 12s; }
 .petal.p8 { left: 90%; animation-delay: 4s;   animation-duration: 19s; }
 
-.mandap-arch {
-  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 85%; opacity: 0.85;
-}
-.mandap-arch path { stroke-dasharray: 1000; animation: draw-line 4s ease-out forwards; }
-
-.sway-item { animation: sway 5s ease-in-out infinite; }
-
 .shimmer-text {
-  background: linear-gradient(90deg, var(--coral) 0%, var(--gold) 40%, var(--coral) 60%, var(--coral-2) 100%);
+  background: linear-gradient(90deg, #fff 0%, #FFE4B5 40%, #fff 60%, #FFD4DC 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: shimmer 4s linear infinite;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.4);
 }
 
 .reveal-text { animation: reveal 1.4s cubic-bezier(0.2,0.8,0.2,1) both; }
@@ -298,6 +332,7 @@ input[type="range"].shaadi-range::-moz-range-thumb {
 .pulse-heart { animation: glow-pulse 2.8s ease-in-out infinite; }
 
 .float-badge { animation: fade-in 1.2s ease-out both, sway 6s ease-in-out infinite 1.2s; }
+
 
 
 /* Dropdown */
