@@ -862,10 +862,10 @@ function VendorCard({ vendor }) {
             <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">Starting at</div>
             <div className="font-display text-2xl font-700 text-[var(--ink)]">{formatINR(vendor.starting_price)}</div>
           </div>
-          <a href={waLink} target="_blank" rel="noreferrer" onClick={(e)=>e.stopPropagation()} data-testid={`wa-${vendor.id}`}
+          <button type="button" onClick={(e)=>{e.preventDefault(); e.stopPropagation(); window.open(waLink, "_blank");}} data-testid={`wa-${vendor.id}`}
              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#25D366] text-white text-xs font-bold hover:scale-105 transition-transform">
             <MessageCircle size={14}/> WhatsApp
-          </a>
+          </button>
         </div>
       </div>
     </Link>
