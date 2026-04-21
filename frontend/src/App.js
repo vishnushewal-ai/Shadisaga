@@ -38,6 +38,35 @@ function formatErr(d) {
   return String(d);
 }
 
+// ======================== ANIMATED COUNTER ========================
+function CountUp({ to, duration = 1600, suffix = "", prefix = "" }) {
+  const [n, setN] = useState(0);
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    if (!started) return;
+    const start = performance.now();
+    let raf;
+    const step = (t) => {
+      const p = Math.min((t - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setN(Math.floor(to * ease));
+      if (p < 1) raf = requestAnimationFrame(step);
+      else setN(to);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [started, to, duration]);
+  useEffect(() => {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) setStarted(true); });
+    }, { threshold: 0.3 });
+    const el = document.getElementById(`cu-${to}-${suffix}`);
+    if (el) obs.observe(el);
+    return () => obs.disconnect();
+  }, [to, suffix]);
+  return <span id={`cu-${to}-${suffix}`} className="count-up">{prefix}{n}{suffix}</span>;
+}
+
 // ======================== AUTH CONTEXT ========================
 const AuthCtx = createContext();
 const useAuth = () => useContext(AuthCtx);
@@ -86,8 +115,8 @@ function Navbar() {
         <Link to="/" data-testid="nav-logo" className="flex items-center gap-3 leading-none">
           <img src={LOGO} alt="Shaadi Saga India" className="h-14 w-14 object-cover rounded-full border-2 border-[var(--coral-soft)] shadow-sm"/>
           <div className="hidden sm:block leading-tight">
-            <div className="font-script text-[var(--coral)] text-3xl lg:text-4xl">ShaadiSagaIndia</div>
-            <div className="text-[var(--muted)] text-[9px] tracking-[0.35em] uppercase font-semibold mt-0.5 text-center">
+            <div className="font-brand brand-gradient text-3xl lg:text-[40px] leading-none">ShaadiSagaIndia</div>
+            <div className="text-[var(--muted)] text-[9px] tracking-[0.35em] uppercase font-semibold mt-1 text-center">
               <span className="text-[var(--gold)]">✦</span> Wedding Planning &amp; Styling <span className="text-[var(--gold)]">✦</span>
             </div>
           </div>
@@ -165,7 +194,7 @@ function Footer() {
           <div className="flex items-center gap-3 mb-4">
             <img src={LOGO} alt="Shaadi Saga India" className="h-14 w-14 object-cover rounded-full border-2 border-[var(--coral-soft)]"/>
             <div>
-              <div className="font-script text-white text-3xl leading-none">ShaadiSagaIndia</div>
+              <div className="font-brand brand-gradient text-3xl leading-none">ShaadiSagaIndia</div>
               <div className="text-[var(--coral-soft)] text-[9px] tracking-[0.3em] uppercase mt-1">Wedding Planning &amp; Styling</div>
             </div>
           </div>
@@ -386,19 +415,25 @@ function Home() {
             <h1 className="font-script text-[var(--coral)] text-6xl md:text-7xl lg:text-[120px] leading-[0.9]">Your shaadi,</h1>
             <h1 className="font-display italic text-[var(--ink)] text-3xl md:text-5xl mt-1">beautifully planned.</h1>
             <p className="text-[var(--muted)] text-lg mt-6 max-w-xl leading-relaxed">
-              From mehendi to mandap — discover verified vendors, transparent prices, and an AI matchmaker designed for the modern Indian couple.
+              Hum aapke saath hain, from the first "haan" to the last pheri. Verified vendors, transparent prices, and an AI matchmaker that truly understands your vibe.
             </p>
             <div className="flex items-center gap-4 mt-8">
               <Link to="/vendors" className="btn-primary" data-testid="hero-cta-browse"><Search size={15}/> Browse Vendors</Link>
               <Link to="/matchmaker" className="btn-outline" data-testid="hero-cta-matchmaker"><Sparkles size={15}/> Try Matchmaker</Link>
             </div>
             <div className="flex items-center gap-8 mt-10 pt-8 border-t border-[var(--border)]">
-              {[{n:"500+",l:"Verified vendors"},{n:"19",l:"Categories"},{n:"4.8★",l:"Avg rating"}].map(s => (
-                <div key={s.l}>
-                  <div className="font-display text-3xl font-700 text-[var(--coral)]">{s.n}</div>
-                  <div className="text-xs text-[var(--muted)] mt-0.5">{s.l}</div>
-                </div>
-              ))}
+              <div>
+                <div className="font-display text-4xl font-700"><CountUp to={500} suffix="+"/></div>
+                <div className="text-xs text-[var(--muted)] mt-0.5">Verified vendors</div>
+              </div>
+              <div>
+                <div className="font-display text-4xl font-700"><CountUp to={19}/></div>
+                <div className="text-xs text-[var(--muted)] mt-0.5">Categories</div>
+              </div>
+              <div>
+                <div className="font-display text-4xl font-700"><CountUp to={48} suffix=""/><span className="count-up">★</span></div>
+                <div className="text-xs text-[var(--muted)] mt-0.5">Avg rating (4.8)</div>
+              </div>
             </div>
           </div>
           <div className="relative fade-up delay-2">
@@ -595,6 +630,40 @@ function Home() {
           </div>
         </section>
       )}
+
+      {/* TESTIMONIALS STRIP */}
+      <section className="py-14 bg-gradient-to-br from-[var(--coral-wash)] via-white to-[var(--bg-soft)] overflow-hidden border-y border-[var(--border)]" data-testid="home-testimonials">
+        <div className="text-center mb-8">
+          <div className="ornament mb-3"><span>Real couples · Real joy</span></div>
+          <h2 className="font-display text-3xl md:text-4xl text-[var(--ink)]">The shaadis we've been part of</h2>
+        </div>
+        <div className="marquee-slow">
+          {[...Array(2)].map((_,r) => (
+            <div key={r} className="flex gap-6 items-center">
+              {[
+                {n:"Priya & Arjun", l:"Udaipur", q:"Shaadi Saga made our destination wedding effortless. 5 vendors, zero stress."},
+                {n:"Neha & Rohit", l:"Delhi NCR", q:"AI Matchmaker nailed our boho-chic vibe. Saved us 3 weeks of research."},
+                {n:"Sara & Dev", l:"Bengaluru", q:"Transparent pricing finally! No more 'contact for quote' headaches."},
+                {n:"Anaya & Vihaan", l:"Mumbai", q:"Veena Nagda for mehendi was a dream. Verified badge is legit."},
+                {n:"Kiara & Rahul", l:"Jaipur", q:"From Sabyasachi to pandit ji — all in one place. Thank you Shaadi Saga!"},
+                {n:"Isha & Karan", l:"Goa", q:"Booked 3 vendors in one afternoon. That's the 2026 way."},
+              ].map((t, i) => (
+                <div key={i} className="bg-white border border-[var(--border)] rounded-2xl p-5 w-80 shadow-sm">
+                  <div className="flex items-center gap-1 text-[var(--gold)] mb-2">{[...Array(5)].map((_,i)=><Star key={i} size={13} className="fill-[var(--gold)]"/>)}</div>
+                  <p className="text-sm text-[var(--ink-2)] italic leading-relaxed font-display">"{t.q}"</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center font-display font-700 text-sm">{t.n.charAt(0)}</div>
+                    <div>
+                      <div className="text-xs font-bold text-[var(--ink)]">{t.n}</div>
+                      <div className="text-[10px] text-[var(--muted)] flex items-center gap-1"><MapPin size={9}/> {t.l}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* WHY */}
       <section className="max-w-7xl mx-auto px-6 lg:px-10 py-24" data-testid="home-why">
