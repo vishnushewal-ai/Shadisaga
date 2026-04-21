@@ -155,6 +155,43 @@ async def me(user: dict = Depends(get_current_user)):
     return UserOut(id=user["id"], email=user["email"], name=user["name"], role=user["role"],
                    phone=user.get("phone"), business_name=user.get("business_name"))
 
+# ============ Contact / Query ============
+class QueryIn(BaseModel):
+    name: str = Field(min_length=1)
+    email: EmailStr
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    subject: str = Field(min_length=1)
+    message: str = Field(min_length=5)
+
+class QueryOut(BaseModel):
+    id: str
+    created_at: str
+
+@api_router.post("/query", response_model=QueryOut)
+async def submit_query(body: QueryIn):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": body.name.strip(),
+        "email": body.email.lower().strip(),
+        "phone": body.phone,
+        "city": body.city,
+        "subject": body.subject.strip(),
+        "message": body.message.strip(),
+        "status": "new",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.queries.insert_one(doc)
+    logger.info(f"New query from {doc['email']}: {doc['subject']}")
+    return QueryOut(id=doc["id"], created_at=doc["created_at"])
+
+@api_router.get("/queries")
+async def list_queries(user: dict = Depends(get_current_user)):
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Admin only")
+    docs = await db.queries.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return docs
+
 # ============ Seeding ============
 @api_router.post("/seed")
 async def seed_db():

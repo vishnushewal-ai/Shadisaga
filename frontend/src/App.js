@@ -106,17 +106,17 @@ function Navbar() {
     { to: "/vendors?category=photographers", label: "Photos" },
     { to: "/vendors", label: "Vendors" },
     { to: "/real-weddings", label: "Real Weddings" },
-    { to: "/vendors?category=eco-vendors", label: "E-Invites" },
+    { to: "/contact", label: "Contact" },
   ];
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[var(--border)]" data-testid="navbar">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-24">
-        <Link to="/" data-testid="nav-logo" className="flex items-center gap-3 leading-none">
-          <img src={LOGO} alt="Shaadi Saga India" className="h-14 w-14 object-cover rounded-full border-2 border-[var(--coral-soft)] shadow-sm"/>
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-28">
+        <Link to="/" data-testid="nav-logo" className="flex items-center gap-4 leading-none">
+          <img src={LOGO} alt="Shaadi Saga India" className="h-20 w-20 md:h-[88px] md:w-[88px] object-cover rounded-full border-2 border-[var(--coral-soft)] shadow-md"/>
           <div className="hidden sm:block leading-tight">
-            <div className="font-brand brand-gradient text-3xl lg:text-[40px] leading-none">ShaadiSagaIndia</div>
-            <div className="text-[var(--muted)] text-[9px] tracking-[0.35em] uppercase font-semibold mt-1 text-center">
+            <div className="font-brand brand-gradient text-4xl lg:text-[46px] leading-none">ShaadiSagaIndia</div>
+            <div className="text-[var(--muted)] text-[10px] tracking-[0.35em] uppercase font-semibold mt-1.5 text-center">
               <span className="text-[var(--gold)]">✦</span> Wedding Planning &amp; Styling <span className="text-[var(--gold)]">✦</span>
             </div>
           </div>
@@ -192,10 +192,10 @@ function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-16 grid md:grid-cols-4 gap-10">
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <img src={LOGO} alt="Shaadi Saga India" className="h-14 w-14 object-cover rounded-full border-2 border-[var(--coral-soft)]"/>
+            <img src={LOGO} alt="Shaadi Saga India" className="h-16 w-16 object-cover rounded-full border-2 border-[var(--coral-soft)]"/>
             <div>
-              <div className="font-brand brand-gradient text-3xl leading-none">ShaadiSagaIndia</div>
-              <div className="text-[var(--coral-soft)] text-[9px] tracking-[0.3em] uppercase mt-1">Wedding Planning &amp; Styling</div>
+              <div className="font-brand brand-gradient text-4xl leading-none">ShaadiSagaIndia</div>
+              <div className="text-[var(--coral-soft)] text-[9px] tracking-[0.3em] uppercase mt-1.5">Wedding Planning &amp; Styling</div>
             </div>
           </div>
           <p className="text-sm leading-relaxed text-white/70">India's modern wedding marketplace — verified vendors, real prices, AI matchmaking. Est. 2026.</p>
@@ -218,7 +218,7 @@ function Footer() {
             <li><Link to="/login/client" className="hover:text-white">Client Login</Link></li>
             <li><Link to="/login/vendor" className="hover:text-white">Vendor Login</Link></li>
             <li><Link to="/register/vendor" className="hover:text-white">List Your Business</Link></li>
-            <li><Link to="/matchmaker" className="hover:text-white">AI Matchmaker</Link></li>
+            <li><Link to="/contact" className="hover:text-white">Get in Touch</Link></li>
           </ul>
         </div>
         <div>
@@ -1095,6 +1095,144 @@ function RealWeddings() {
   );
 }
 
+// ======================== CONTACT PAGE ========================
+function ContactPage() {
+  const { user } = useAuth();
+  const [form, setForm] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    city: "",
+    subject: "Wedding planning inquiry",
+    message: "",
+  });
+  const [sent, setSent] = useState(false);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) setForm(f => ({...f, name: user.name || f.name, email: user.email || f.email, phone: user.phone || f.phone}));
+  }, [user]);
+
+  const subjects = [
+    "Wedding planning inquiry",
+    "Vendor booking help",
+    "Budget planning",
+    "Destination wedding",
+    "AI Matchmaker help",
+    "List my business",
+    "Something else",
+  ];
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr(""); setLoading(true);
+    try {
+      await axios.post(`${API}/query`, form);
+      setSent(true);
+    } catch (ex) {
+      setErr(formatErr(ex.response?.data?.detail) || "Could not send. Please try again.");
+    }
+    setLoading(false);
+  };
+
+  if (sent) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 lg:px-10 py-24 text-center" data-testid="contact-success">
+        <div className="w-20 h-20 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center mx-auto pulse-heart">
+          <Check size={40}/>
+        </div>
+        <div className="ornament mt-6 mb-3"><span>Thank you</span></div>
+        <h1 className="font-brand brand-gradient text-6xl md:text-7xl leading-none">Dhanyavaad, {form.name.split(" ")[0]}!</h1>
+        <p className="text-[var(--muted)] mt-5 max-w-xl mx-auto text-lg leading-relaxed">
+          Your query has reached us. Our team will get back to you within 24 hours on <strong className="text-[var(--ink)]">{form.email}</strong> or call you at <strong className="text-[var(--ink)]">{form.phone || "your number on record"}</strong>.
+        </p>
+        <div className="flex gap-3 justify-center mt-8">
+          <Link to="/vendors" className="btn-primary"><Search size={14}/> Browse Vendors</Link>
+          <Link to="/" className="btn-outline">Back home</Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-6 lg:px-10 py-16" data-testid="contact-page">
+      <div className="text-center mb-12 fade-up">
+        <div className="ornament mb-3"><span>Query · Connect · Plan</span></div>
+        <h1 className="font-brand brand-gradient text-6xl md:text-8xl leading-none">Get in touch</h1>
+        <p className="font-display italic text-[var(--ink-2)] text-xl md:text-2xl mt-4 max-w-2xl mx-auto">
+          We bring you the best of Indian weddings with a twist of tradition and swag.
+        </p>
+        <p className="text-[var(--muted)] mt-3 max-w-xl mx-auto">Tell us about your shaadi — we'll connect you directly to the right vendors or our planners.</p>
+      </div>
+
+      <div className="grid lg:grid-cols-[1.6fr_1fr] gap-10">
+        {/* Form */}
+        <form onSubmit={submit} className="card-warm p-8 md:p-10 space-y-5" data-testid="contact-form">
+          <div className="grid md:grid-cols-2 gap-5">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Your name</label>
+              <input required value={form.name} onChange={e=>setForm({...form, name:e.target.value})} data-testid="contact-name" className="w-full mt-2 px-4 py-3 rounded-xl border border-[var(--border)] bg-white outline-none focus:border-[var(--coral)]"/>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Email</label>
+              <input type="email" required value={form.email} onChange={e=>setForm({...form, email:e.target.value})} data-testid="contact-email" className="w-full mt-2 px-4 py-3 rounded-xl border border-[var(--border)] bg-white outline-none focus:border-[var(--coral)]"/>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Phone</label>
+              <input value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} placeholder="+91 ..." data-testid="contact-phone" className="w-full mt-2 px-4 py-3 rounded-xl border border-[var(--border)] bg-white outline-none focus:border-[var(--coral)]"/>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">City</label>
+              <input value={form.city} onChange={e=>setForm({...form, city:e.target.value})} placeholder="Delhi, Mumbai…" data-testid="contact-city" className="w-full mt-2 px-4 py-3 rounded-xl border border-[var(--border)] bg-white outline-none focus:border-[var(--coral)]"/>
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">What's this about?</label>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {subjects.map(s => (
+                <button type="button" key={s} onClick={()=>setForm({...form, subject:s})} data-testid={`contact-subject-${s.toLowerCase().replace(/\s/g,'-')}`} className={`chip ${form.subject===s ? '!bg-[var(--coral)] !text-white !border-[var(--coral)]' : ''}`}>{s}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Your message</label>
+            <textarea required minLength={5} rows={5} value={form.message} onChange={e=>setForm({...form, message:e.target.value})} placeholder="Tell us about your wedding — dates, guests, vibe, vendors you're looking for…" data-testid="contact-message" className="w-full mt-2 px-4 py-3 rounded-xl border border-[var(--border)] bg-white outline-none focus:border-[var(--coral)] resize-none"/>
+          </div>
+          {err && <div className="text-sm text-[var(--coral-2)] bg-[var(--coral-wash)] p-3 rounded-xl border border-[var(--coral-soft)]" data-testid="contact-error">{err}</div>}
+          <button type="submit" disabled={loading} className="btn-primary w-full justify-center !py-4" data-testid="contact-submit">
+            {loading ? "Sending…" : <><Heart size={15}/> Send message <ArrowRight size={14}/></>}
+          </button>
+          <p className="text-[11px] text-[var(--muted)] text-center">We'll respond within 24 hours. Your info stays private.</p>
+        </form>
+
+        {/* Side info */}
+        <aside className="space-y-4">
+          <div className="card-warm p-6">
+            <div className="w-12 h-12 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center mb-4"><Phone size={20}/></div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">Call directly</div>
+            <a href={`tel:${PHONE.replace(/\s/g,'')}`} className="font-display text-2xl font-700 text-[var(--ink)] block mt-1 hover:text-[var(--coral)]" data-testid="contact-phone-link">{PHONE}</a>
+            <div className="text-xs text-[var(--muted)] mt-2">Mon – Sat, 10am – 8pm IST</div>
+          </div>
+          <div className="card-warm p-6">
+            <div className="w-12 h-12 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center mb-4"><Mail size={20}/></div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">Email us</div>
+            <a href="mailto:hello@shaadisaga.in" className="font-display text-xl font-600 text-[var(--ink)] block mt-1 hover:text-[var(--coral)]">hello@shaadisaga.in</a>
+          </div>
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="card-warm p-6 block hover:border-[var(--coral)]" data-testid="contact-instagram">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--coral)] to-[var(--gold)] text-white flex items-center justify-center mb-4"><Instagram size={20}/></div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">DM on Instagram</div>
+            <div className="font-display text-xl font-600 text-[var(--ink)] mt-1">@vanshajhanda</div>
+            <div className="text-xs text-[var(--coral)] mt-2 font-semibold">Fastest response →</div>
+          </a>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 // ======================== APP ========================
 function App() {
   return (
@@ -1113,6 +1251,7 @@ function App() {
             <Route path="/register/client" element={<RegisterPage role="client"/>}/>
             <Route path="/register/vendor" element={<RegisterPage role="vendor"/>}/>
             <Route path="/dashboard" element={<Dashboard/>}/>
+            <Route path="/contact" element={<ContactPage/>}/>
           </Routes>
           <Footer/>
         </AuthProvider>
