@@ -5,7 +5,8 @@ import axios from "axios";
 import {
   Search, MapPin, Star, Shield, ArrowRight, Sparkles, Menu, X, Phone, Instagram,
   Heart, Camera, Flame, Gem, Music, Utensils, Mail, Scissors, Hand, Leaf,
-  Plane, Film, Landmark, Building2, Flower2, Check, Filter, User, LogOut, ChevronDown, Store
+  Plane, Film, Landmark, Building2, Flower2, Check, Filter, User, LogOut, ChevronDown, Store,
+  MessageCircle, Inbox, Calculator, Clock
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -13,8 +14,22 @@ const API = `${BACKEND_URL}/api`;
 const LOGO = "/assets/logo.jpeg";
 const INSTAGRAM_URL = "https://www.instagram.com/vanshajhanda?igsh=MXJ0amZneXVnaHRhcw==";
 const PHONE = "+91 72176 12408";
+const WHATSAPP = "917217612408";
 
 axios.defaults.withCredentials = true;
+
+// Recently-viewed tracker (localStorage)
+const RV_KEY = "ssi-recent-vendors";
+const addRecent = (vendor) => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(RV_KEY) || "[]");
+    const next = [vendor, ...raw.filter(v => v.id !== vendor.id)].slice(0, 6);
+    localStorage.setItem(RV_KEY, JSON.stringify(next));
+  } catch (_) {}
+};
+const getRecent = () => {
+  try { return JSON.parse(localStorage.getItem(RV_KEY) || "[]"); } catch (_) { return []; }
+};
 
 const ICONS = {
   landmark: Landmark, sparkles: Sparkles, hotel: Building2, "building-2": Building2,
@@ -73,9 +88,15 @@ const useAuth = () => useContext(AuthCtx);
 
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null); // null=loading, false=guest, object=user
+  const [favIds, setFavIds] = useState(new Set());
   useEffect(() => {
     axios.get(`${API}/auth/me`).then(r => setUser(r.data)).catch(() => setUser(false));
   }, []);
+  useEffect(() => {
+    if (user && user.role === "client") {
+      axios.get(`${API}/favourites`).then(r => setFavIds(new Set(r.data.vendor_ids))).catch(()=>{});
+    } else { setFavIds(new Set()); }
+  }, [user]);
   const login = async (payload) => {
     const r = await axios.post(`${API}/auth/login`, payload);
     setUser(r.data);
@@ -88,9 +109,19 @@ function AuthProvider({ children }) {
   };
   const logout = async () => {
     await axios.post(`${API}/auth/logout`).catch(()=>{});
-    setUser(false);
+    setUser(false); setFavIds(new Set());
   };
-  return <AuthCtx.Provider value={{ user, login, register, logout }}>{children}</AuthCtx.Provider>;
+  const toggleFav = async (vendorId) => {
+    if (!user || user.role !== "client") return { needLogin: true };
+    const r = await axios.post(`${API}/favourites/toggle`, { vendor_id: vendorId });
+    setFavIds(prev => {
+      const n = new Set(prev);
+      if (r.data.favourited) n.add(vendorId); else n.delete(vendorId);
+      return n;
+    });
+    return r.data;
+  };
+  return <AuthCtx.Provider value={{ user, login, register, logout, favIds, toggleFav }}>{children}</AuthCtx.Provider>;
 }
 
 // ======================== NAVBAR ========================
@@ -103,8 +134,8 @@ function Navbar() {
 
   const links = [
     { to: "/vendors?category=venues", label: "Venues" },
-    { to: "/vendors?category=photographers", label: "Photos" },
     { to: "/vendors", label: "Vendors" },
+    { to: "/budget", label: "Budget" },
     { to: "/real-weddings", label: "Real Weddings" },
     { to: "/contact", label: "Contact" },
   ];
@@ -142,6 +173,8 @@ function Navbar() {
                 <div className="dropdown" onMouseLeave={()=>setUserMenu(false)} data-testid="nav-user-dropdown">
                   <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold border-b border-[var(--border)] mb-1">{user.role}</div>
                   <Link to="/dashboard" onClick={()=>setUserMenu(false)}><User size={14}/> Dashboard</Link>
+                  {user.role === "client" && <Link to="/favourites" onClick={()=>setUserMenu(false)} data-testid="nav-favourites"><Heart size={14}/> My Favourites</Link>}
+                  {user.role === "admin" && <Link to="/admin/queries" onClick={()=>setUserMenu(false)} data-testid="nav-admin-inbox"><Inbox size={14}/> Query Inbox</Link>}
                   <button onClick={async()=>{await logout(); setUserMenu(false); navigate("/");}} data-testid="nav-logout" className="w-full flex items-center gap-2 p-3 rounded-lg text-sm font-medium text-[var(--ink)] hover:bg-[var(--coral-wash)] hover:text-[var(--coral)]"><LogOut size={14}/> Log out</button>
                 </div>
               )}
@@ -509,6 +542,7 @@ function Home() {
   return (
     <div data-testid="home-page">
       <PersonalWelcome/>
+      <RecentlyViewed/>
       {/* HERO */}
       <section className="relative overflow-hidden" data-testid="home-hero">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-10 lg:pt-20 lg:pb-16 grid lg:grid-cols-[1.05fr_1fr] gap-12 items-center">
@@ -793,14 +827,28 @@ function Home() {
 
 // ======================== VENDOR CARD ========================
 function VendorCard({ vendor }) {
+  const { user, favIds, toggleFav } = useAuth();
+  const isFav = favIds?.has(vendor.id);
+  const navigate = useNavigate();
+  const handleFav = async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!user) { navigate("/login/client"); return; }
+    await toggleFav(vendor.id);
+  };
+  const waLink = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hi! I'm interested in ${vendor.name} (${vendor.category}, ${vendor.city}) from Shaadi Saga India.`)}`;
   return (
-    <Link to={`/vendor/${vendor.id}`} className="card-warm group block fade-up" data-testid={`vendor-card-${vendor.id}`}>
+    <Link to={`/vendor/${vendor.id}`} className="card-warm group block fade-up relative" data-testid={`vendor-card-${vendor.id}`}>
       <div className="relative h-60 overflow-hidden">
         <img src={vendor.images[0]} alt={vendor.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" onError={(e)=>{e.target.src="https://images.unsplash.com/photo-1519741497674-611481863552?w=900";}}/>
         {vendor.verified && <div className="verified-badge absolute top-3 left-3"><Shield size={10}/> Verified</div>}
         <div className="absolute top-3 right-3 chip !bg-white/95">
           <Star size={12} className="fill-[var(--gold)] text-[var(--gold)]"/> {vendor.rating} <span className="text-[var(--muted)] font-normal">({vendor.reviews})</span>
         </div>
+        {/* Heart favourite */}
+        <button onClick={handleFav} data-testid={`fav-${vendor.id}`} aria-label="Save to favourites"
+          className={`absolute bottom-3 right-3 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all ${isFav ? "bg-[var(--coral)] text-white scale-110" : "bg-white/95 text-[var(--coral)] hover:bg-[var(--coral)] hover:text-white"}`}>
+          <Heart size={16} className={isFav ? "fill-white" : ""}/>
+        </button>
       </div>
       <div className="p-5">
         <div className="flex items-center gap-1.5 text-[10px] text-[var(--coral)] font-bold uppercase tracking-[0.2em]"><MapPin size={10}/> {vendor.city}</div>
@@ -814,7 +862,10 @@ function VendorCard({ vendor }) {
             <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">Starting at</div>
             <div className="font-display text-2xl font-700 text-[var(--ink)]">{formatINR(vendor.starting_price)}</div>
           </div>
-          <div className="flex items-center gap-1 text-[var(--coral)] font-semibold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">View <ArrowRight size={14}/></div>
+          <a href={waLink} target="_blank" rel="noreferrer" onClick={(e)=>e.stopPropagation()} data-testid={`wa-${vendor.id}`}
+             className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#25D366] text-white text-xs font-bold hover:scale-105 transition-transform">
+            <MessageCircle size={14}/> WhatsApp
+          </a>
         </div>
       </div>
     </Link>
@@ -927,6 +978,7 @@ function VendorDetail() {
   useEffect(() => {
     axios.get(`${API}/vendors/${id}`).then(r => {
       setVendor(r.data);
+      addRecent({ id: r.data.id, name: r.data.name, category: r.data.category, city: r.data.city, starting_price: r.data.starting_price, images: r.data.images });
       axios.get(`${API}/vendors?category=${r.data.category}&limit=4`).then(rr => setRelated(rr.data.filter(x=>x.id!==id).slice(0,3)));
     });
   }, [id]);
@@ -978,6 +1030,9 @@ function VendorDetail() {
             ))}
           </div>
           <button className="btn-primary w-full justify-center mt-7" data-testid="vendor-chat-btn"><Heart size={16}/> Start Chat</button>
+          <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hi! I'm interested in ${vendor.name} from Shaadi Saga India.`)}`} target="_blank" rel="noreferrer" data-testid="vendor-whatsapp-btn" className="w-full mt-3 flex items-center justify-center gap-2 py-3 rounded-full bg-[#25D366] text-white font-semibold text-sm hover:bg-[#1FB855] transition-colors">
+            <MessageCircle size={16}/> WhatsApp us
+          </a>
           <button className="btn-outline w-full justify-center mt-3" data-testid="vendor-availability-btn">Check Availability</button>
         </aside>
       </div>
@@ -1092,6 +1147,193 @@ function RealWeddings() {
         ))}
       </div>
     </div>
+  );
+}
+
+// ======================== FAVOURITES PAGE ========================
+function FavouritesPage() {
+  const { user } = useAuth();
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (user && user.role === "client") {
+      axios.get(`${API}/favourites`).then(r => { setVendors(r.data.vendors); setLoading(false); }).catch(()=>setLoading(false));
+    }
+  }, [user]);
+  if (user === null) return <div className="text-center py-20 text-[var(--muted)]">Loading…</div>;
+  if (!user || user.role !== "client") return <Navigate to="/login/client" replace/>;
+  return (
+    <div className="max-w-7xl mx-auto px-6 lg:px-10 py-16" data-testid="favourites-page">
+      <div className="text-center mb-12">
+        <div className="ornament mb-3"><span>Your shortlist</span></div>
+        <h1 className="font-brand brand-gradient text-6xl md:text-7xl leading-none">My Favourites</h1>
+        <p className="text-[var(--muted)] mt-4 max-w-xl mx-auto">{vendors.length} vendor{vendors.length !== 1 ? "s" : ""} saved. Build your dream shaadi team, one heart at a time.</p>
+      </div>
+      {loading ? <div className="text-center py-10 text-[var(--muted)]">Loading…</div>
+       : vendors.length === 0 ? (
+        <div className="card-warm p-12 text-center max-w-xl mx-auto" data-testid="favourites-empty">
+          <Heart size={40} className="text-[var(--coral)] mx-auto"/>
+          <h3 className="font-display text-2xl mt-4 text-[var(--ink)]">No favourites yet</h3>
+          <p className="text-[var(--muted)] mt-2">Tap the ❤ on any vendor card to save it here.</p>
+          <Link to="/vendors" className="btn-primary mt-6 inline-flex"><Search size={14}/> Browse vendors</Link>
+        </div>
+       ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {vendors.map(v => <VendorCard key={v.id} vendor={v}/>)}
+        </div>
+       )}
+    </div>
+  );
+}
+
+// ======================== BUDGET CALCULATOR ========================
+function BudgetPage() {
+  const [total, setTotal] = useState(1500000);
+  const breakdown = [
+    { label: "Venue & Catering", pct: 45, icon: Building2, desc: "Banquet hall or hotel + multi-cuisine per-plate" },
+    { label: "Photography & Content", pct: 12, icon: Camera, desc: "Photographer + content creator + drone" },
+    { label: "Decor & Flowers", pct: 12, icon: Flower2, desc: "Mandap, stage, entrance, floral installations" },
+    { label: "Bridal Wear & Jewellery", pct: 10, icon: Gem, desc: "Lehenga/saree, jewellery, groomwear" },
+    { label: "Makeup & Mehendi", pct: 6, icon: Hand, desc: "MUA, mehendi artist, bridal grooming" },
+    { label: "Music & Entertainment", pct: 5, icon: Music, desc: "DJ, live band, sufi night" },
+    { label: "Invites & Gifts", pct: 4, icon: Mail, desc: "E-invites, return gifts, trousseau" },
+    { label: "Pandit, Travel & Buffer", pct: 6, icon: Flame, desc: "Pandit ji, transport, hotel rooms, contingency" },
+  ];
+  return (
+    <div className="max-w-7xl mx-auto px-6 lg:px-10 py-16" data-testid="budget-page">
+      <div className="text-center mb-12">
+        <div className="ornament mb-3"><span>2026 Indian Wedding Budget</span></div>
+        <h1 className="font-brand brand-gradient text-6xl md:text-7xl leading-none">Budget Planner</h1>
+        <p className="text-[var(--muted)] mt-4 max-w-xl mx-auto">Drag the slider — we'll split your budget into typical Indian wedding categories.</p>
+      </div>
+      <div className="card-warm p-8 md:p-10 mb-10">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-widest text-[var(--coral)]">Total Wedding Budget</label>
+          <span className="font-display text-4xl md:text-5xl font-700 text-[var(--ink)]" data-testid="budget-total">{formatINR(total)}</span>
+        </div>
+        <input data-testid="budget-slider" type="range" min="200000" max="50000000" step="50000" value={total} onChange={e=>setTotal(parseInt(e.target.value))} className="shaadi-range mt-4"/>
+        <div className="flex justify-between text-[11px] text-[var(--muted)] mt-2 uppercase tracking-widest"><span>₹2L</span><span>₹5 Cr</span></div>
+      </div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {breakdown.map((b, i) => {
+          const amount = Math.round((total * b.pct) / 100);
+          return (
+            <div key={b.label} className="card-warm p-6 fade-up" style={{animationDelay: `${i*40}ms`}} data-testid={`budget-${b.label.toLowerCase().replace(/[^a-z]+/g,'-')}`}>
+              <div className="w-11 h-11 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center mb-4"><b.icon size={20}/></div>
+              <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">{b.pct}% of total</div>
+              <div className="font-display text-xl font-600 text-[var(--ink)] mt-1 leading-tight">{b.label}</div>
+              <div className="font-display text-3xl font-700 text-[var(--coral)] mt-2">{formatINR(amount)}</div>
+              <p className="text-xs text-[var(--muted)] mt-2 leading-relaxed">{b.desc}</p>
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-center mt-12">
+        <Link to="/matchmaker" className="btn-gold"><Sparkles size={15}/> Match me with vendors in this budget <ArrowRight size={14}/></Link>
+      </div>
+    </div>
+  );
+}
+
+// ======================== ADMIN QUERY INBOX ========================
+function AdminInbox() {
+  const { user } = useAuth();
+  const [queries, setQueries] = useState([]);
+  const [stats, setStats] = useState({ new: 0, total: 0 });
+  const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const load = async () => {
+    try {
+      const [q, s] = await Promise.all([axios.get(`${API}/queries`), axios.get(`${API}/queries/stats`)]);
+      setQueries(q.data); setStats(s.data);
+    } catch(e) {}
+    setLoading(false);
+  };
+  useEffect(() => { if (user?.role === "admin") load(); }, [user]);
+  if (user === null) return <div className="text-center py-20 text-[var(--muted)]">Loading…</div>;
+  if (!user || user.role !== "admin") return <Navigate to="/login/client" replace/>;
+  const setStatus = async (qid, status) => {
+    await axios.patch(`${API}/queries/${qid}`, { status });
+    load();
+  };
+  const filtered = filter === "all" ? queries : queries.filter(q => q.status === filter);
+  const statusColors = { new: "bg-[var(--coral)] text-white", read: "bg-[var(--gold)] text-[var(--ink)]", replied: "bg-green-600 text-white", closed: "bg-gray-400 text-white" };
+  return (
+    <div className="max-w-6xl mx-auto px-6 lg:px-10 py-12" data-testid="admin-inbox">
+      <div className="mb-8">
+        <div className="ornament mb-3"><span>Admin · Inquiries</span></div>
+        <h1 className="font-brand brand-gradient text-5xl md:text-6xl leading-none">Query Inbox</h1>
+        <p className="text-[var(--muted)] mt-3">{stats.total} total · <span className="text-[var(--coral)] font-bold">{stats.new} unread</span></p>
+      </div>
+      <div className="flex gap-2 mb-6 flex-wrap">
+        {["all", "new", "read", "replied", "closed"].map(f => (
+          <button key={f} onClick={()=>setFilter(f)} data-testid={`inbox-filter-${f}`} className={`chip ${filter===f ? '!bg-[var(--coral)] !text-white !border-[var(--coral)]' : ''} capitalize`}>{f}</button>
+        ))}
+      </div>
+      {loading ? <div className="text-center py-10 text-[var(--muted)]">Loading…</div>
+       : filtered.length === 0 ? <div className="card-warm p-10 text-center"><Inbox size={32} className="mx-auto text-[var(--muted)]"/><p className="mt-3 text-[var(--muted)]">No queries in this view.</p></div>
+       : (
+        <div className="space-y-3">
+          {filtered.map(q => (
+            <div key={q.id} className="card-warm p-5" data-testid={`inbox-query-${q.id}`}>
+              <div className="flex items-start justify-between flex-wrap gap-3">
+                <div className="flex-1 min-w-[240px]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold ${statusColors[q.status] || statusColors.new}`}>{q.status}</span>
+                    <h3 className="font-display text-lg font-600 text-[var(--ink)]">{q.subject}</h3>
+                  </div>
+                  <div className="text-xs text-[var(--muted)] mt-1">{q.name} · {q.email} {q.phone && `· ${q.phone}`} {q.city && `· ${q.city}`}</div>
+                  <p className="text-sm text-[var(--ink-2)] mt-3 leading-relaxed">{q.message}</p>
+                  <div className="text-[10px] text-[var(--muted-2)] mt-3 uppercase tracking-widest"><Clock size={10} className="inline"/> {new Date(q.created_at).toLocaleString()}</div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <a href={`mailto:${q.email}?subject=Re: ${q.subject}`} className="text-xs px-3 py-1.5 rounded-full bg-[var(--ink)] text-white text-center font-semibold">Email</a>
+                  {q.phone && <a href={`https://wa.me/${q.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hi ${q.name}, thanks for reaching out to Shaadi Saga India! `)}`} target="_blank" rel="noreferrer" className="text-xs px-3 py-1.5 rounded-full bg-[#25D366] text-white text-center font-semibold">WhatsApp</a>}
+                  <select value={q.status} onChange={e=>setStatus(q.id, e.target.value)} data-testid={`inbox-status-${q.id}`} className="text-xs px-2 py-1.5 rounded-full border border-[var(--border)] bg-white">
+                    <option value="new">New</option>
+                    <option value="read">Read</option>
+                    <option value="replied">Replied</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+       )}
+    </div>
+  );
+}
+
+// ======================== RECENTLY VIEWED STRIP ========================
+function RecentlyViewed() {
+  const [recent, setRecent] = useState([]);
+  useEffect(() => { setRecent(getRecent()); }, []);
+  if (recent.length < 2) return null;
+  return (
+    <section className="max-w-7xl mx-auto px-6 lg:px-10 py-10" data-testid="recently-viewed">
+      <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <div className="ornament mb-2"><span>Your journey</span></div>
+          <h2 className="font-display text-3xl md:text-4xl text-[var(--ink)]">Continue where you left off</h2>
+        </div>
+        <button onClick={()=>{localStorage.removeItem(RV_KEY); setRecent([]);}} className="text-xs text-[var(--coral)] font-semibold underline" data-testid="recent-clear">Clear history</button>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        {recent.slice(0, 6).map(v => (
+          <Link key={v.id} to={`/vendor/${v.id}`} className="card-warm group block" data-testid={`recent-${v.id}`}>
+            <div className="relative h-28 overflow-hidden">
+              <img src={v.images?.[0]} alt={v.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
+            </div>
+            <div className="p-2.5">
+              <div className="text-[9px] text-[var(--coral)] font-bold uppercase tracking-widest truncate">{v.category}</div>
+              <div className="font-display text-sm font-600 text-[var(--ink)] truncate leading-tight mt-0.5">{v.name}</div>
+              <div className="text-[10px] font-bold text-[var(--muted)] mt-1">{formatINR(v.starting_price)}</div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -1248,10 +1490,14 @@ function App() {
             <Route path="/real-weddings" element={<RealWeddings/>}/>
             <Route path="/login/client" element={<LoginPage role="client"/>}/>
             <Route path="/login/vendor" element={<LoginPage role="vendor"/>}/>
+            <Route path="/login/admin" element={<LoginPage role="admin"/>}/>
             <Route path="/register/client" element={<RegisterPage role="client"/>}/>
             <Route path="/register/vendor" element={<RegisterPage role="vendor"/>}/>
             <Route path="/dashboard" element={<Dashboard/>}/>
             <Route path="/contact" element={<ContactPage/>}/>
+            <Route path="/favourites" element={<FavouritesPage/>}/>
+            <Route path="/budget" element={<BudgetPage/>}/>
+            <Route path="/admin/queries" element={<AdminInbox/>}/>
           </Routes>
           <Footer/>
         </AuthProvider>

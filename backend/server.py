@@ -68,7 +68,7 @@ class RegisterIn(BaseModel):
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
-    role: Literal["client", "vendor"]
+    role: Literal["client", "vendor", "admin"]
 
 class UserOut(BaseModel):
     id: str
@@ -191,6 +191,53 @@ async def list_queries(user: dict = Depends(get_current_user)):
         raise HTTPException(403, "Admin only")
     docs = await db.queries.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     return docs
+
+# ============ Favourites ============
+class FavToggle(BaseModel):
+    vendor_id: str
+
+@api_router.post("/favourites/toggle")
+async def toggle_favourite(body: FavToggle, user: dict = Depends(get_current_user)):
+    if user.get("role") != "client":
+        raise HTTPException(403, "Only clients can favourite vendors")
+    existing = await db.favourites.find_one({"user_id": user["id"], "vendor_id": body.vendor_id})
+    if existing:
+        await db.favourites.delete_one({"user_id": user["id"], "vendor_id": body.vendor_id})
+        return {"favourited": False}
+    await db.favourites.insert_one({
+        "user_id": user["id"], "vendor_id": body.vendor_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"favourited": True}
+
+@api_router.get("/favourites")
+async def list_favourites(user: dict = Depends(get_current_user)):
+    favs = await db.favourites.find({"user_id": user["id"]}, {"_id": 0}).to_list(500)
+    ids = [f["vendor_id"] for f in favs]
+    if not ids: return {"vendor_ids": [], "vendors": []}
+    vendors = await db.vendors.find({"id": {"$in": ids}}, {"_id": 0}).to_list(500)
+    return {"vendor_ids": ids, "vendors": vendors}
+
+# ============ Admin Query status ============
+class QueryStatusUpdate(BaseModel):
+    status: Literal["new", "read", "replied", "closed"]
+
+@api_router.patch("/queries/{query_id}")
+async def update_query_status(query_id: str, body: QueryStatusUpdate, user: dict = Depends(get_current_user)):
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Admin only")
+    result = await db.queries.update_one({"id": query_id}, {"$set": {"status": body.status}})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Query not found")
+    return {"ok": True, "status": body.status}
+
+@api_router.get("/queries/stats")
+async def query_stats(user: dict = Depends(get_current_user)):
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Admin only")
+    new = await db.queries.count_documents({"status": "new"})
+    total = await db.queries.count_documents({})
+    return {"new": new, "total": total}
 
 # ============ Seeding ============
 @api_router.post("/seed")

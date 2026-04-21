@@ -1,0 +1,61 @@
+{
+  "summary": "Iteration 3 regression: 44/44 backend pytest cases pass (22 existing + 22 new for favourites, public query, admin inbox). Frontend validated end-to-end — Admin login→/dashboard→/admin/queries shows inbox with 5 filter chips + 5 real queries + status dropdowns; Client login→vendors shows 41 fav + 41 WhatsApp buttons; /favourites renders client's saved vendor; /budget slider changes total in real-time (₹15L→₹25L); vendor detail page shows WhatsApp CTA. Found 1 HTML nesting issue (nested <a> inside VendorCard Link) causing React hydration warnings — non-blocking but should be fixed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/query", "issue": "Public endpoint — no rate-limit / captcha, susceptible to spam"},
+      {"endpoint": "POST /api/seed", "issue": "Still public — flagged in iter 1 & 2, carried over"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "VendorCard",
+        "issue": "Nested <a> tag: whole card is wrapped in <Link> (renders <a>) and inside it there is a WhatsApp <a> tag (wa-{id}). Produces React hydration error 'In HTML, <a> cannot be a descendant of <a>' on every page that renders VendorCard (Home, Vendors, Favourites, VendorDetail related, Dashboard). Clicks still work but it is invalid HTML and noisy in console.",
+        "selector": "[data-testid^='wa-'] inside [data-testid^='vendor-card-']",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "HTML <title>",
+        "issue": "Page title is still 'Emergent | Fullstack App' — should be 'ShaadiSagaIndia — Your shaadi, beautifully planned' for SEO/branding",
+        "selector": "<title>",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_iter3.py",
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/test_reports/pytest/iter3_results.xml"
+  ],
+  "action_items": [
+    "Fix nested <a> in VendorCard: make the WhatsApp button either a <button> that does window.open(), or stop wrapping whole card with Link and instead make title/image the only clickable link. Also recommend wrapping heart toggle (fav-{id}) similarly since it is also inside the outer Link — that is why e.stopPropagation is needed on click; better is to remove outer anchor nesting entirely.",
+    "Update index.html <title> to 'ShaadiSagaIndia' for proper branding",
+    "Add simple rate-limit or hCaptcha to POST /api/query (public endpoint) to prevent spam",
+    "Remove or admin-protect POST /api/seed before production"
+  ],
+  "critical_code_review_comments": [
+    "server.py ~line 200: toggle_favourite uses two round-trips (find_one then delete/insert). Could be compacted with upsert+$setOnInsert or find_one_and_delete, but current implementation is correct and readable.",
+    "server.py ~line 215: list_favourites does not preserve favourite-order — vendors are returned in whatever order Mongo returns $in matches. Consider sorting by favourites.created_at desc so most recently favourited appears first.",
+    "server.py: /api/query is completely public — no rate-limiting, captcha, or honeypot. Spammable.",
+    "server.py /queries limit hardcoded to 200 — no pagination. Fine for MVP but will break past a few thousand queries.",
+    "VendorCard renders outer <Link> wrapping heart + WhatsApp anchor tags — invalid HTML nesting <a> inside <a>. Refactor to non-nesting structure.",
+    "AuthProvider calling /api/auth/me with 401 logging noise on every anonymous page load (flagged iter 2, still present).",
+    "Frontend budget page uses native range <input type='range'> — good, no shadcn calendar issue.",
+    "FavouritesPage empty state + personal welcome are client-only — correctly gated.",
+    "No validation on QueryIn.phone format — accepts any string, may store junk."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter3.py"
+  ],
+  "success_rate": {"backend": "100% (44/44)", "frontend": "95% — core flows all work; only cosmetic HTML nesting warning"},
+  "test_credentials": "Unchanged. admin@shaadisaga.in / Admin@123 (admin, seeded & verified login→/dashboard); client@test.com / Test@123 (client, has 1 persistent favourite); vendor@test.com / Test@123 (vendor, correctly blocked from toggling favourites with 403).",
+  "seed_data_creation": "Tests submit ~5 TEST_* queries into db.queries for admin-inbox testing; these persist (no cleanup endpoint). Admin inbox currently shows ~5 queries as a result.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression: /app/backend/tests/backend_test.py (22 tests) + /app/backend/tests/test_iter3.py (22 tests, covers favourites toggle/list with role gating, public /api/query validation, admin /api/queries + /queries/stats + PATCH /queries/{id} with 401/403/422/404 paths). Frontend data-testids confirmed working: budget-page, budget-slider, budget-total; contact-page, contact-submit, contact-success; admin-inbox, inbox-filter-{all|new|read|replied|closed}, inbox-query-{id}, inbox-status-{id}; fav-{id}, wa-{id} (41 each on /vendors); favourites-page; vendor-whatsapp-btn on vendor detail. RecentlyViewed strip not visually verified in this run (test navigation was destroying handles) but backend is stateless for it (localStorage-only). HTML hydration warnings due to nested <a> are the only real UI defect.",
+  "rca of the issue": "VendorCard is implemented as <Link to=/vendor/{id}> wrapping an inner flex container that also contains <a href='https://wa.me/...'> (WhatsApp) and a <button>-like element for favourite. React-DOM emits 'In HTML, <a> cannot be a descendant of <a>' warnings for every VendorCard mount. Reproduction: load / or /vendors in browser, open devtools console — warnings printed per card. Mitigation: (a) remove outer <Link>, use programmatic navigation on title/image click only; or (b) convert WhatsApp <a> into <button type='button' onClick={() => window.open(waHref,'_blank')}> while keeping onClick stopPropagation so the outer card-link click isn't triggered; fav button is already a <button> so only WA button needs the refactor."
+}
