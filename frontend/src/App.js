@@ -785,8 +785,7 @@ function Matchmaker() {
       <div className="text-center mb-12 fade-up">
         <div className="ornament mb-4"><span>AI-powered · 2026</span></div>
         <h1 className="font-script text-[var(--coral)] text-6xl md:text-8xl leading-tight">The Matchmaker</h1>
-        <p className="font-display italic text-[var(--ink-2)] text-2xl mt-1">Powered by AI · Guided by tradition</p>
-        <p className="text-[var(--muted)] mt-5 max-w-xl mx-auto">Tell us your vibe. We'll match you with 3 vendors whose aesthetic, price &amp; city align with your shaadi's soul.</p>
+        <p className="font-display italic text-[var(--ink-2)] text-xl md:text-2xl mt-4 max-w-2xl mx-auto leading-snug">We bring you the best of Indian weddings with a twist of tradition and swag.</p>
       </div>
       <form onSubmit={handleSubmit} className="card-warm p-8 md:p-10 space-y-7" data-testid="matchmaker-form">
         <div>
