@@ -377,7 +377,6 @@ function Dashboard() {
         <span className="pulse-heart inline-block">{emoji}</span> {greet}
       </div>
       <h1 className="font-brand brand-gradient text-6xl md:text-7xl leading-none">Namaste, {user.name.split(" ")[0]}!</h1>
-      <p className="text-[var(--muted)] mt-3 text-lg">You're signed in as a <strong className="text-[var(--ink)] capitalize">{user.role}</strong>. Kya haal-chaal?</p>
 
       <div className="grid md:grid-cols-3 gap-4 mt-8">
         <div className="card-warm p-5">
