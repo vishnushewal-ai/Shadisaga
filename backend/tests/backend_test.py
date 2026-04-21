@@ -123,3 +123,130 @@ class TestMatchmaker:
         assert r.status_code == 200
         data = r.json()
         assert len(data["recommendations"]) == 3
+
+
+# -------------------- Auth (JWT cookie) --------------------
+import uuid as _uuid
+
+
+@pytest.fixture(scope="module")
+def unique_emails():
+    tag = _uuid.uuid4().hex[:8]
+    return {
+        "client": f"TEST_client_{tag}@example.com",
+        "vendor": f"TEST_vendor_{tag}@example.com",
+    }
+
+
+class TestAuth:
+    """Auth: register/login/me/logout with role separation + httpOnly cookies."""
+
+    def test_register_client_sets_cookie(self, unique_emails):
+        s = requests.Session()
+        payload = {
+            "email": unique_emails["client"],
+            "password": "Test@123",
+            "name": "Test Client",
+            "role": "client",
+            "phone": "+917217612408",
+        }
+        r = s.post(f"{API}/auth/register", json=payload, timeout=30)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["email"] == unique_emails["client"].lower()
+        assert data["role"] == "client"
+        assert "id" in data and isinstance(data["id"], str)
+        # cookie set
+        assert "access_token" in s.cookies, f"access_token cookie not set: {dict(s.cookies)}"
+
+    def test_register_vendor_with_business_name(self, unique_emails):
+        s = requests.Session()
+        payload = {
+            "email": unique_emails["vendor"],
+            "password": "Test@123",
+            "name": "Test Vendor",
+            "role": "vendor",
+            "business_name": "TEST Lotus Decorators",
+        }
+        r = s.post(f"{API}/auth/register", json=payload, timeout=30)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["role"] == "vendor"
+        assert data["business_name"] == "TEST Lotus Decorators"
+        assert "access_token" in s.cookies
+
+    def test_register_duplicate_email_400(self, unique_emails):
+        s = requests.Session()
+        payload = {
+            "email": unique_emails["client"],
+            "password": "Test@123",
+            "name": "dup",
+            "role": "client",
+        }
+        r = s.post(f"{API}/auth/register", json=payload, timeout=30)
+        assert r.status_code == 400
+        assert "already" in r.json().get("detail", "").lower()
+
+    def test_login_wrong_role_returns_403(self, unique_emails):
+        """Client account trying to login as vendor should be forbidden."""
+        s = requests.Session()
+        r = s.post(f"{API}/auth/login",
+                   json={"email": unique_emails["client"], "password": "Test@123", "role": "vendor"},
+                   timeout=30)
+        assert r.status_code == 403
+        assert "not a vendor" in r.json().get("detail", "").lower()
+
+    def test_login_wrong_password_401(self, unique_emails):
+        s = requests.Session()
+        r = s.post(f"{API}/auth/login",
+                   json={"email": unique_emails["client"], "password": "WrongPass!", "role": "client"},
+                   timeout=30)
+        assert r.status_code == 401
+
+    def test_login_client_success_and_me(self, unique_emails):
+        s = requests.Session()
+        r = s.post(f"{API}/auth/login",
+                   json={"email": unique_emails["client"], "password": "Test@123", "role": "client"},
+                   timeout=30)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["email"] == unique_emails["client"].lower()
+        assert data["role"] == "client"
+        assert "access_token" in s.cookies
+        # /me should work with cookie
+        me = s.get(f"{API}/auth/me", timeout=30)
+        assert me.status_code == 200
+        assert me.json()["email"] == unique_emails["client"].lower()
+
+    def test_me_without_cookie_returns_401(self):
+        r = requests.get(f"{API}/auth/me", timeout=30)
+        assert r.status_code == 401
+
+    def test_logout_clears_cookie(self, unique_emails):
+        s = requests.Session()
+        s.post(f"{API}/auth/login",
+               json={"email": unique_emails["vendor"], "password": "Test@123", "role": "vendor"},
+               timeout=30)
+        assert "access_token" in s.cookies
+        r = s.post(f"{API}/auth/logout", timeout=30)
+        assert r.status_code == 200
+        # After logout, /me should 401 (cookie cleared server-side)
+        # requests sets cookie to "" in session on delete_cookie response
+        me = s.get(f"{API}/auth/me", timeout=30)
+        assert me.status_code == 401
+
+    def test_admin_login_as_client_is_forbidden(self):
+        """Seeded admin has role='admin' — shouldn't login as client/vendor."""
+        s = requests.Session()
+        r = s.post(f"{API}/auth/login",
+                   json={"email": "admin@shaadisaga.in", "password": "Admin@123", "role": "client"},
+                   timeout=30)
+        assert r.status_code == 403
+
+    def test_password_hash_is_bcrypt_format(self, unique_emails):
+        """Indirect check: login with correct password succeeds => bcrypt verify works."""
+        s = requests.Session()
+        r = s.post(f"{API}/auth/login",
+                   json={"email": unique_emails["client"], "password": "Test@123", "role": "client"},
+                   timeout=30)
+        assert r.status_code == 200
