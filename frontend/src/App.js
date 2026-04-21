@@ -402,17 +402,77 @@ function Home() {
             </div>
           </div>
           <div className="relative fade-up delay-2">
-            <div className="relative rounded-[28px] overflow-hidden aspect-[4/5] border-4 border-white shadow-[0_40px_80px_-30px_rgba(232,90,114,0.35)]">
-              <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=85" alt="Indian wedding" className="w-full h-full object-cover"/>
+            <div className="hero-canvas" data-testid="hero-motion">
+              {/* Floating petals */}
+              {["p1","p2","p3","p4","p5","p6","p7","p8"].map(p => (
+                <div key={p} className={`petal ${p}`} style={{top:"100%"}}>
+                  <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <circle cx="16" cy="16" r="6" fill="#E85A72" opacity="0.85"/>
+                    <circle cx="10" cy="12" r="5" fill="#D94963" opacity="0.7"/>
+                    <circle cx="22" cy="12" r="5" fill="#D94963" opacity="0.7"/>
+                    <circle cx="10" cy="20" r="5" fill="#D94963" opacity="0.7"/>
+                    <circle cx="22" cy="20" r="5" fill="#D94963" opacity="0.7"/>
+                    <circle cx="16" cy="16" r="3" fill="#D4A944"/>
+                  </svg>
+                </div>
+              ))}
+
+              {/* Mandap arch (SVG, draws in) */}
+              <svg className="mandap-arch" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M 40 280 Q 40 60, 200 60 Q 360 60, 360 280" stroke="#D4A944" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M 60 280 Q 60 90, 200 90 Q 340 90, 340 280" stroke="#E85A72" strokeWidth="1.2" strokeLinecap="round" opacity="0.6"/>
+                {/* Kalash on top */}
+                <circle cx="200" cy="52" r="6" fill="#D4A944"/>
+                <path d="M 195 52 Q 200 38, 205 52" stroke="#D4A944" strokeWidth="2"/>
+                {/* Flowers along arch */}
+                {[80, 140, 200, 260, 320].map((x, i) => (
+                  <g key={i} className="sway-item" style={{transformOrigin:`${x}px 85px`}}>
+                    <circle cx={x} cy={72 + (x===200? -10 : 0)} r="5" fill="#E85A72"/>
+                    <circle cx={x} cy={72 + (x===200? -10 : 0)} r="2.5" fill="#D4A944"/>
+                  </g>
+                ))}
+              </svg>
+
+              {/* Center script + motif */}
+              <div className="hero-center">
+                <div className="reveal-text mb-4">
+                  <svg width="80" height="80" viewBox="0 0 100 100" fill="none" className="mx-auto pulse-heart">
+                    <circle cx="50" cy="50" r="45" stroke="#D4A944" strokeWidth="1"/>
+                    <circle cx="50" cy="50" r="36" stroke="#E85A72" strokeWidth="1" strokeDasharray="4 4"/>
+                    <path d="M50 30 L55 45 L70 45 L58 55 L62 70 L50 60 L38 70 L42 55 L30 45 L45 45 Z" fill="#D4A944" opacity="0.7"/>
+                    <text x="50" y="58" textAnchor="middle" fill="#6B0E2A" fontFamily="Great Vibes" fontSize="34">SS</text>
+                  </svg>
+                </div>
+                <h3 className="reveal-text r2 font-script shimmer-text text-5xl md:text-6xl leading-none">Shubh</h3>
+                <h3 className="reveal-text r3 font-script shimmer-text text-5xl md:text-6xl leading-none mt-1">Vivah</h3>
+                <div className="reveal-text r3 mt-5 text-[var(--coral-2)] tracking-[0.4em] text-[10px] uppercase font-bold">
+                  Auspicious · Beautiful · Yours
+                </div>
+              </div>
+
+              {/* Corner ornaments */}
+              <svg className="absolute top-4 left-4 w-10 h-10 opacity-70" viewBox="0 0 40 40" fill="#D4A944">
+                <path d="M0 0 L40 0 L40 3 Q20 3, 3 20 Q3 40, 0 40 Z"/>
+              </svg>
+              <svg className="absolute top-4 right-4 w-10 h-10 opacity-70 -scale-x-100" viewBox="0 0 40 40" fill="#D4A944">
+                <path d="M0 0 L40 0 L40 3 Q20 3, 3 20 Q3 40, 0 40 Z"/>
+              </svg>
+              <svg className="absolute bottom-4 left-4 w-10 h-10 opacity-70 -scale-y-100" viewBox="0 0 40 40" fill="#D4A944">
+                <path d="M0 0 L40 0 L40 3 Q20 3, 3 20 Q3 40, 0 40 Z"/>
+              </svg>
+              <svg className="absolute bottom-4 right-4 w-10 h-10 opacity-70 -scale-100" viewBox="0 0 40 40" fill="#D4A944">
+                <path d="M0 0 L40 0 L40 3 Q20 3, 3 20 Q3 40, 0 40 Z"/>
+              </svg>
             </div>
-            <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-xl border border-[var(--border)] flex items-center gap-3 max-w-[260px]">
+
+            <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-xl border border-[var(--border)] flex items-center gap-3 max-w-[260px] float-badge">
               <div className="w-10 h-10 rounded-full bg-[var(--coral-wash)] flex items-center justify-center text-[var(--coral)]"><Shield size={18}/></div>
               <div>
                 <div className="text-xs font-semibold text-[var(--ink)]">Verified vendors only</div>
                 <div className="text-[11px] text-[var(--muted)] mt-0.5">GST & references checked</div>
               </div>
             </div>
-            <div className="absolute -top-4 -right-4 bg-[var(--coral)] text-white rounded-2xl p-4 shadow-xl max-w-[220px]">
+            <div className="absolute -top-4 -right-4 bg-[var(--coral)] text-white rounded-2xl p-4 shadow-xl max-w-[220px] float-badge" style={{animationDelay:"0.4s"}}>
               <div className="flex items-center gap-2 text-white/90 text-[10px] uppercase tracking-widest font-semibold"><Sparkles size={12}/> New 2026</div>
               <div className="text-sm font-medium mt-1.5">AI Matchmaker finds your 3 perfect vendors</div>
             </div>

@@ -192,6 +192,114 @@ input[type="range"].shaadi-range::-moz-range-thumb {
   background: linear-gradient(180deg, rgba(255,246,244,0.3) 0%, rgba(255,246,244,0.5) 50%, rgba(255,246,244,0.92) 100%);
 }
 
+/* ================== MOTION HERO ================== */
+@keyframes float-up {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.9; }
+  100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
+}
+@keyframes sway {
+  0%,100% { transform: translateX(0) rotate(-2deg); }
+  50%     { transform: translateX(12px) rotate(2deg); }
+}
+@keyframes glow-pulse {
+  0%,100% { filter: drop-shadow(0 0 0 rgba(232,90,114,0)); transform: scale(1); }
+  50%     { filter: drop-shadow(0 0 20px rgba(232,90,114,0.5)); transform: scale(1.04); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes reveal {
+  0%   { clip-path: inset(0 100% 0 0); opacity: 0; }
+  100% { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+@keyframes draw-line {
+  0%   { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes slow-spin {
+  from { transform: rotate(0deg); } to { transform: rotate(360deg); }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/5;
+  border-radius: 28px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 20%, #FFE1DA 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 85%, #FFD4DC 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 75%, #FFF0D4 0%, transparent 55%),
+    linear-gradient(180deg, #FFF6F4 0%, #FFEEE9 100%);
+  border: 1px solid var(--coral-soft);
+  box-shadow: 0 40px 80px -30px rgba(232,90,114,0.35);
+}
+.hero-canvas::before {
+  /* radial mandala */
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle at 50% 50%, transparent 18%, rgba(212,169,68,0.08) 19%, transparent 20%),
+    radial-gradient(circle at 50% 50%, transparent 28%, rgba(212,169,68,0.06) 29%, transparent 30%),
+    radial-gradient(circle at 50% 50%, transparent 38%, rgba(232,90,114,0.05) 39%, transparent 40%);
+  animation: slow-spin 80s linear infinite;
+}
+
+.hero-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 30px;
+}
+
+/* floating flowers/ornaments */
+.petal {
+  position: absolute;
+  width: 28px; height: 28px;
+  opacity: 0;
+  animation: float-up 14s linear infinite;
+  pointer-events: none;
+}
+.petal.p1 { left: 10%; animation-delay: 0s;   animation-duration: 16s; }
+.petal.p2 { left: 25%; animation-delay: 3s;   animation-duration: 13s; }
+.petal.p3 { left: 45%; animation-delay: 6s;   animation-duration: 18s; }
+.petal.p4 { left: 65%; animation-delay: 2s;   animation-duration: 14s; }
+.petal.p5 { left: 80%; animation-delay: 8s;   animation-duration: 15s; }
+.petal.p6 { left: 35%; animation-delay: 10s;  animation-duration: 17s; }
+.petal.p7 { left: 55%; animation-delay: 12s;  animation-duration: 12s; }
+.petal.p8 { left: 90%; animation-delay: 4s;   animation-duration: 19s; }
+
+.mandap-arch {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 85%; opacity: 0.85;
+}
+.mandap-arch path { stroke-dasharray: 1000; animation: draw-line 4s ease-out forwards; }
+
+.sway-item { animation: sway 5s ease-in-out infinite; }
+
+.shimmer-text {
+  background: linear-gradient(90deg, var(--coral) 0%, var(--gold) 40%, var(--coral) 60%, var(--coral-2) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+
+.reveal-text { animation: reveal 1.4s cubic-bezier(0.2,0.8,0.2,1) both; }
+.reveal-text.r2 { animation-delay: 0.6s; }
+.reveal-text.r3 { animation-delay: 1.1s; }
+
+.pulse-heart { animation: glow-pulse 2.8s ease-in-out infinite; }
+
+.float-badge { animation: fade-in 1.2s ease-out both, sway 6s ease-in-out infinite 1.2s; }
+
+
 /* Dropdown */
 .dropdown {
   position: absolute; top: calc(100% + 8px); right: 0;
