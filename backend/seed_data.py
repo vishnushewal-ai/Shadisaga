@@ -105,10 +105,12 @@ VENDORS = [
 ]
 
 REAL_WEDDINGS = [
-    {"title": "Almeida & Jaime's Goa Beach Shaadi", "location": "Goa", "theme": "Boho-Beach", "image": "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200", "story": "An intimate 80-guest sunset shaadi on Ashwem Beach with pampas grass mandap and live qawwali."},
-    {"title": "Priya & Arjun's Udaipur Palace", "location": "Udaipur", "theme": "Royal", "image": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=1200", "story": "Lake Pichola ceremony with 300 guests, drone cinematography, and a Sabyasachi bride."},
-    {"title": "Neha & Rohit's Delhi Farmhouse", "location": "New Delhi", "theme": "Minimalist Luxe", "image": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200", "story": "Micro-wedding of 50 with editorial photography, zero-waste florals and pastel mehendi."},
-    {"title": "Sara & Dev's Bengaluru Garden", "location": "Bengaluru", "theme": "Eco-Boho", "image": "https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=1200", "story": "All-vegetarian eco-friendly wedding with digital invites and live tabla."},
+    {"title": "Almeida & Jaime's Goa Beach Shaadi", "location": "Goa", "theme": "Boho-Beach", "image": "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200", "story": "An intimate 80-guest sunset shaadi on Ashwem Beach with pampas grass mandap and live qawwali. Featured on @shaadisagaindia."},
+    {"title": "Priya & Arjun's Udaipur Palace", "location": "Udaipur", "theme": "Royal", "image": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=1200", "story": "Lake Pichola ceremony with 300 guests, drone cinematography, and a Sabyasachi bride. Planned with Shaadi Saga India."},
+    {"title": "Neha & Rohit's Delhi Farmhouse", "location": "New Delhi", "theme": "Minimalist Luxe", "image": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200", "story": "Micro-wedding of 50 with editorial photography, zero-waste florals and pastel mehendi. Go-to vendors via Shaadi Saga."},
+    {"title": "Sara & Dev's Bengaluru Garden", "location": "Bengaluru", "theme": "Eco-Boho", "image": "https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=1200", "story": "All-vegetarian eco-friendly wedding with digital invites and live tabla. Matched by our AI Matchmaker."},
+    {"title": "Isha & Karan's Jaipur Haveli", "location": "Jaipur", "theme": "Rajwada", "image": "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1200", "story": "A 3-day royal haveli shaadi with authentic Rajasthani mehendi, baithak dinners, and a pearl-themed reception."},
+    {"title": "Anaya & Vihaan's Mumbai Rooftop", "location": "Mumbai", "theme": "Modern Glam", "image": "https://images.unsplash.com/photo-1529636798458-92182e662485?w=1200", "story": "Sky-high Bandra rooftop nikaah with fireworks, live Sufi band, and a Manish Malhotra bride. 150 guests."},
 ]
 
 

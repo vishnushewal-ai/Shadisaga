@@ -12,7 +12,10 @@ import {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 const LOGO = "/assets/logo.jpeg";
-const INSTAGRAM_URL = "https://www.instagram.com/vanshajhanda?igsh=MXJ0amZneXVnaHRhcw==";
+const INSTAGRAM_URL = "https://www.instagram.com/shaadisagaindia?igsh=enJxNml1Z2tjdHQ1";
+const INSTAGRAM_HANDLE = "@shaadisagaindia";
+const FOUNDER_INSTAGRAM_URL = "https://www.instagram.com/vanshajhanda?igsh=MXJ0amZneXVnaHRhcw==";
+const FOUNDER_HANDLE = "@vanshajhanda";
 const PHONE = "+91 72176 12408";
 const WHATSAPP = "917217612408";
 
@@ -236,7 +239,7 @@ function Footer() {
           </div>
           <p className="text-sm leading-relaxed text-white/70">India's modern wedding marketplace — verified vendors, real prices, AI matchmaking. Est. 2026.</p>
           <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" data-testid="footer-instagram" className="inline-flex items-center gap-2 mt-5 text-sm text-[var(--coral-soft)] hover:text-white">
-            <Instagram size={16}/> @vanshajhanda
+            <Instagram size={16}/> {INSTAGRAM_HANDLE}
           </a>
         </div>
         <div>
@@ -261,7 +264,8 @@ function Footer() {
           <h4 className="text-[var(--coral-soft)] uppercase text-xs tracking-widest mb-4 font-semibold">Contact</h4>
           <a href={`tel:${PHONE.replace(/\s/g,'')}`} className="text-sm flex items-center gap-2 hover:text-white" data-testid="footer-phone"><Phone size={14}/> {PHONE}</a>
           <p className="text-sm flex items-center gap-2 mt-2"><Mail size={14}/> hello@shaadisaga.in</p>
-          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="text-sm flex items-center gap-2 mt-2 hover:text-white"><Instagram size={14}/> Instagram</a>
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="text-sm flex items-center gap-2 mt-2 hover:text-white"><Instagram size={14}/> {INSTAGRAM_HANDLE}</a>
+          <a href={FOUNDER_INSTAGRAM_URL} target="_blank" rel="noreferrer" className="text-sm flex items-center gap-2 mt-2 hover:text-white text-white/50"><Instagram size={12}/> Founder · {FOUNDER_HANDLE}</a>
         </div>
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs text-white/50">© 2026 ShaadiSagaIndia · Wedding Planning &amp; Styling · All shaadi, no drama.</div>
@@ -794,6 +798,41 @@ function Home() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* AS SEEN ON INSTAGRAM */}
+      <section className="max-w-7xl mx-auto px-6 lg:px-10 py-16" data-testid="home-instagram-strip">
+        <div className="text-center mb-10">
+          <div className="ornament mb-3"><span>As seen on Instagram</span></div>
+          <h2 className="font-script text-[var(--coral)] text-5xl md:text-6xl leading-tight">Follow the shaadi saga</h2>
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" data-testid="home-ig-handle" className="inline-flex items-center gap-2 mt-4 px-5 py-2 rounded-full bg-gradient-to-br from-[var(--coral)] to-[var(--gold)] text-white font-semibold text-sm shadow-md hover:scale-105 transition-transform">
+            <Instagram size={16}/> {INSTAGRAM_HANDLE}
+          </a>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+          {[
+            "https://images.unsplash.com/photo-1519741497674-611481863552?w=600",
+            "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600",
+            "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600",
+            "https://images.unsplash.com/photo-1600101628742-4f4d1f48e0cb?w=600",
+            "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600",
+            "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=600",
+            "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600",
+            "https://images.unsplash.com/photo-1555244162-803834f70033?w=600",
+            "https://images.unsplash.com/photo-1529636798458-92182e662485?w=600",
+            "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600",
+            "https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=600",
+            "https://images.unsplash.com/photo-1617922001439-4a2e6562f328?w=600",
+          ].map((src) => (
+            <a key={src} href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="relative group aspect-square overflow-hidden rounded-xl border border-[var(--border)]">
+              <img src={src} alt="Shaadi moment" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--coral)]/0 to-[var(--coral)]/0 group-hover:from-[var(--coral)]/70 group-hover:to-[var(--gold)]/60 transition-all flex items-center justify-center">
+                <Instagram size={28} className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"/>
+              </div>
+            </a>
+          ))}
+        </div>
+        <p className="text-center text-[var(--muted)] mt-6 text-sm">Real shaadis. Real vendors. Real joy — all on our Instagram.</p>
       </section>
 
       {/* WHY */}
@@ -1524,7 +1563,7 @@ function ContactPage() {
           <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="card-warm p-6 block hover:border-[var(--coral)]" data-testid="contact-instagram">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--coral)] to-[var(--gold)] text-white flex items-center justify-center mb-4"><Instagram size={20}/></div>
             <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">DM on Instagram</div>
-            <div className="font-display text-xl font-600 text-[var(--ink)] mt-1">@vanshajhanda</div>
+            <div className="font-display text-xl font-600 text-[var(--ink)] mt-1">{INSTAGRAM_HANDLE}</div>
             <div className="text-xs text-[var(--coral)] mt-2 font-semibold">Fastest response →</div>
           </a>
         </aside>
