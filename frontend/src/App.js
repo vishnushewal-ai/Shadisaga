@@ -145,24 +145,24 @@ function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[var(--border)]" data-testid="navbar">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-28">
-        <Link to="/" data-testid="nav-logo" className="flex items-center gap-4 leading-none">
-          <img src={LOGO} alt="Shaadi Saga India" className="h-20 w-20 md:h-[88px] md:w-[88px] object-cover rounded-full border-2 border-[var(--coral-soft)] shadow-md"/>
-          <div className="hidden sm:block leading-tight">
-            <div className="font-brand brand-gradient text-4xl lg:text-[46px] leading-none">ShaadiSagaIndia</div>
-            <div className="text-[var(--muted)] text-[10px] tracking-[0.35em] uppercase font-semibold mt-1.5 text-center">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-10 flex items-center justify-between h-24 gap-4">
+        <Link to="/" data-testid="nav-logo" className="flex items-center gap-3 leading-none flex-shrink-0">
+          <img src={LOGO} alt="Shaadi Saga India" className="h-14 w-14 md:h-[68px] md:w-[68px] object-cover rounded-full border-2 border-[var(--coral-soft)] shadow-md flex-shrink-0"/>
+          <div className="hidden sm:block lg:hidden xl:block leading-tight">
+            <div className="font-brand brand-gradient text-[26px] md:text-[30px] xl:text-[36px] leading-none whitespace-nowrap">ShaadiSagaIndia</div>
+            <div className="text-[var(--muted)] text-[8px] md:text-[9px] tracking-[0.3em] uppercase font-semibold mt-1 whitespace-nowrap">
               <span className="text-[var(--gold)]">✦</span> Wedding Planning &amp; Styling <span className="text-[var(--gold)]">✦</span>
             </div>
           </div>
         </Link>
-        <nav className="hidden lg:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-7 flex-1 justify-center">
           {links.map(l => (
-            <Link key={l.label} to={l.to} data-testid={`nav-${l.label.toLowerCase().replace(/\s/g,'-')}`} className="text-[12px] font-semibold uppercase tracking-[0.15em] text-[var(--ink)] hover:text-[var(--coral)] transition-colors">
+            <Link key={l.label} to={l.to} data-testid={`nav-${l.label.toLowerCase().replace(/\s/g,'-')}`} className="text-[11px] xl:text-[12px] font-semibold uppercase tracking-[0.12em] xl:tracking-[0.15em] text-[var(--ink)] hover:text-[var(--coral)] transition-colors whitespace-nowrap">
               {l.label}
             </Link>
           ))}
         </nav>
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-shrink-0">
           <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" data-testid="nav-instagram" aria-label="Instagram"
              className="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--coral)] hover:bg-[var(--coral)] hover:text-white transition-colors">
             <Instagram size={16}/>
