@@ -43,6 +43,10 @@ class Vendor(BaseModel):
     tags: List[str] = []
     images: List[str] = []
     description: str
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_instagram: Optional[str] = None
+    contact_website: Optional[str] = None
 
 class Category(BaseModel):
     slug: str; name: str; icon: str; image: str; count: int = 0

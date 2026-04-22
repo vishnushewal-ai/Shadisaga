@@ -110,3 +110,48 @@ REAL_WEDDINGS = [
     {"title": "Neha & Rohit's Delhi Farmhouse", "location": "New Delhi", "theme": "Minimalist Luxe", "image": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200", "story": "Micro-wedding of 50 with editorial photography, zero-waste florals and pastel mehendi."},
     {"title": "Sara & Dev's Bengaluru Garden", "location": "Bengaluru", "theme": "Eco-Boho", "image": "https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=1200", "story": "All-vegetarian eco-friendly wedding with digital invites and live tabla."},
 ]
+
+
+# Contact info + extended gallery enrichment
+import hashlib as _h
+GALLERY_POOL = [
+    "https://images.unsplash.com/photo-1519741497674-611481863552?w=900",
+    "https://images.unsplash.com/photo-1529636798458-92182e662485?w=900",
+    "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=900",
+    "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=900",
+    "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=900",
+    "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=900",
+    "https://images.unsplash.com/photo-1555244162-803834f70033?w=900",
+    "https://images.unsplash.com/photo-1600101628742-4f4d1f48e0cb?w=900",
+    "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=900",
+    "https://images.unsplash.com/photo-1508614999368-9260051292e5?w=900",
+    "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=900",
+    "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=900",
+    "https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=900",
+    "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=900",
+    "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=900",
+    "https://images.unsplash.com/photo-1617922001439-4a2e6562f328?w=900",
+]
+
+def _slugify(name: str) -> str:
+    return "".join(c.lower() if c.isalnum() else "" for c in name)[:20] or "vendor"
+
+for _v in VENDORS:
+    # deterministic gallery: pick 5-6 unique images from pool
+    seed = int(_h.md5(_v["name"].encode()).hexdigest(), 16)
+    pool = list(GALLERY_POOL)
+    picked = []
+    for _ in range(6):
+        idx = seed % len(pool)
+        picked.append(pool.pop(idx))
+        seed //= 7 or 1
+        if not pool: break
+    # keep original first image + append more
+    _v["images"] = [_v["images"][0]] + [p for p in picked if p not in _v["images"]]
+    # contact info
+    slug = _slugify(_v["name"])
+    _v["contact_phone"] = _v.get("contact_phone") or f"+91 98{(seed%90)+10}{seed%100:02d} {(seed//10)%90000:05d}"
+    _v["contact_email"] = _v.get("contact_email") or f"hello@{slug}.in"
+    _v["contact_instagram"] = _v.get("contact_instagram") or f"https://instagram.com/{slug}"
+    if _v["category"] in {"venues", "hotels", "banquet-halls"}:
+        _v["contact_website"] = _v.get("contact_website") or f"https://{slug}.com"

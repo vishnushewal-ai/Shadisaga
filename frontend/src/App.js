@@ -602,13 +602,11 @@ function Home() {
                 </div>
               ))}
 
-              {/* Floating congratulations around the couple */}
-              <div className="wish script" style={{top:"6%", left:"8%", animationDelay:"0.4s", "--r":"-4deg", "--dx":"6px", "--dy":"-4px"}}>Mubarak Ho!</div>
-              <div className="wish" style={{top:"10%", right:"6%", animationDelay:"0.8s", "--r":"3deg", "--dx":"-6px", "--dy":"4px"}}><span className="dot">❤</span> Congratulations</div>
-              <div className="wish script" style={{top:"34%", left:"2%", animationDelay:"1.2s", "--r":"-2deg", "--dx":"8px", "--dy":"0px"}}>Sada Suhagan Raho</div>
-              <div className="wish" style={{top:"42%", right:"3%", animationDelay:"1.6s", "--r":"4deg", "--dx":"-4px", "--dy":"6px"}}><span className="dot">✦</span> Khush raho, pyaar se bharpoor</div>
-              <div className="wish script" style={{bottom:"22%", left:"6%", animationDelay:"2.0s", "--r":"2deg", "--dx":"4px", "--dy":"-5px"}}>May your love last forever</div>
-              <div className="wish" style={{bottom:"14%", right:"8%", animationDelay:"2.4s", "--r":"-3deg", "--dx":"-7px", "--dy":"-3px"}}><span className="dot">✨</span> Blessings &amp; love</div>
+              {/* Floating congratulations around the edges — avoiding couple's faces */}
+              <div className="wish script" style={{top:"4%", left:"6%", animationDelay:"0.4s", "--r":"-4deg", "--dx":"6px", "--dy":"-4px"}}>Mubarak Ho!</div>
+              <div className="wish" style={{bottom:"30%", left:"2%", animationDelay:"0.9s", "--r":"-2deg", "--dx":"6px", "--dy":"-5px"}}><span className="dot">❤</span> Congratulations</div>
+              <div className="wish script" style={{bottom:"14%", left:"8%", animationDelay:"1.4s", "--r":"2deg", "--dx":"4px", "--dy":"-5px"}}>Sada Suhagan Raho</div>
+              <div className="wish" style={{bottom:"8%", right:"10%", animationDelay:"1.9s", "--r":"-3deg", "--dx":"-5px", "--dy":"-3px"}}><span className="dot">✨</span> Blessings &amp; love</div>
 
               {/* Gold corner ornaments */}
               <svg className="absolute top-4 left-4 w-10 h-10 opacity-80 z-5" viewBox="0 0 40 40" fill="#FFE4B5">
@@ -1009,13 +1007,74 @@ function VendorDetail() {
             </div>
           </div>
           {vendor.images.length > 1 && (
-            <div className="mt-12">
-              <h3 className="text-xs uppercase tracking-[0.25em] text-[var(--coral)] font-bold mb-4">Gallery</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {vendor.images.map((img,i) => (<img key={i} src={img} alt="" className="w-full h-64 object-cover rounded-2xl"/>))}
+            <div className="mt-12" data-testid="vendor-gallery">
+              <div className="flex items-end justify-between mb-4">
+                <h3 className="text-xs uppercase tracking-[0.25em] text-[var(--coral)] font-bold">Art Gallery</h3>
+                <span className="text-[11px] text-[var(--muted)]">{vendor.images.length} shots</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {vendor.images.map((img,i) => (
+                  <div key={i} className="relative overflow-hidden rounded-2xl aspect-[4/3] group border border-[var(--border)]">
+                    <img src={img} alt={`${vendor.name} work ${i+1}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"/>
+                  </div>
+                ))}
               </div>
             </div>
           )}
+
+          {/* Contact section */}
+          <div className="mt-12" data-testid="vendor-contact">
+            <div className="ornament mb-4"><span>Get in touch</span></div>
+            <h3 className="font-display text-3xl font-600 text-[var(--ink)] mb-6">Reach {vendor.name}</h3>
+            <div className="grid md:grid-cols-2 gap-3">
+              {vendor.contact_phone && (
+                <a href={`tel:${vendor.contact_phone.replace(/\s/g,'')}`} data-testid="contact-vendor-phone" className="card-warm p-5 flex items-center gap-4 hover:border-[var(--coral)]">
+                  <div className="w-11 h-11 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center flex-shrink-0"><Phone size={20}/></div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">Call</div>
+                    <div className="font-semibold text-[var(--ink)] truncate">{vendor.contact_phone}</div>
+                  </div>
+                </a>
+              )}
+              {vendor.contact_phone && (
+                <a href={`https://wa.me/${vendor.contact_phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hi ${vendor.name}! Found you on Shaadi Saga India. Can we discuss availability?`)}`} target="_blank" rel="noreferrer" data-testid="contact-vendor-whatsapp" className="card-warm p-5 flex items-center gap-4 hover:border-[#25D366]">
+                  <div className="w-11 h-11 rounded-full bg-[#DCF8C6] text-[#25D366] flex items-center justify-center flex-shrink-0"><MessageCircle size={20}/></div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">WhatsApp</div>
+                    <div className="font-semibold text-[var(--ink)] truncate">{vendor.contact_phone}</div>
+                  </div>
+                </a>
+              )}
+              {vendor.contact_email && (
+                <a href={`mailto:${vendor.contact_email}?subject=${encodeURIComponent(`Wedding inquiry via Shaadi Saga India`)}`} data-testid="contact-vendor-email" className="card-warm p-5 flex items-center gap-4 hover:border-[var(--coral)]">
+                  <div className="w-11 h-11 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center flex-shrink-0"><Mail size={20}/></div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">Email</div>
+                    <div className="font-semibold text-[var(--ink)] truncate">{vendor.contact_email}</div>
+                  </div>
+                </a>
+              )}
+              {vendor.contact_instagram && (
+                <a href={vendor.contact_instagram} target="_blank" rel="noreferrer" data-testid="contact-vendor-instagram" className="card-warm p-5 flex items-center gap-4 hover:border-[var(--coral)]">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FEDA75] via-[#FA7E1E] to-[#D62976] text-white flex items-center justify-center flex-shrink-0"><Instagram size={20}/></div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">Instagram</div>
+                    <div className="font-semibold text-[var(--ink)] truncate">@{vendor.contact_instagram.replace(/.*instagram.com\//,'').replace(/\/$/,'')}</div>
+                  </div>
+                </a>
+              )}
+              {vendor.contact_website && (
+                <a href={vendor.contact_website} target="_blank" rel="noreferrer" data-testid="contact-vendor-website" className="card-warm p-5 flex items-center gap-4 hover:border-[var(--coral)] md:col-span-2">
+                  <div className="w-11 h-11 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center flex-shrink-0"><Landmark size={20}/></div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">Website</div>
+                    <div className="font-semibold text-[var(--ink)] truncate">{vendor.contact_website.replace(/^https?:\/\//,'')}</div>
+                  </div>
+                </a>
+              )}
+            </div>
+          </div>
         </div>
         <aside className="card-warm p-8 h-fit lg:sticky lg:top-28" data-testid="vendor-booking-card">
           <div className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] font-semibold">Starting at</div>
