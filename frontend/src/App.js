@@ -18,17 +18,20 @@ const WHATSAPP = "917217612408";
 
 axios.defaults.withCredentials = true;
 
-// Recently-viewed tracker (localStorage)
+// Recently-viewed tracker (localStorage — non-sensitive vendor IDs only; auth uses httpOnly cookies)
 const RV_KEY = "ssi-recent-vendors";
 const addRecent = (vendor) => {
   try {
     const raw = JSON.parse(localStorage.getItem(RV_KEY) || "[]");
     const next = [vendor, ...raw.filter(v => v.id !== vendor.id)].slice(0, 6);
     localStorage.setItem(RV_KEY, JSON.stringify(next));
-  } catch (_) {}
+  } catch (err) {
+    console.warn("addRecent failed:", err);
+  }
 };
 const getRecent = () => {
-  try { return JSON.parse(localStorage.getItem(RV_KEY) || "[]"); } catch (_) { return []; }
+  try { return JSON.parse(localStorage.getItem(RV_KEY) || "[]"); }
+  catch (err) { console.warn("getRecent failed:", err); return []; }
 };
 
 const ICONS = {
@@ -774,8 +777,8 @@ function Home() {
           <h2 className="font-display text-3xl md:text-4xl text-[var(--ink)]">The shaadis we've been part of</h2>
         </div>
         <div className="marquee-slow">
-          {[...Array(2)].map((_,r) => (
-            <div key={r} className="flex gap-6 items-center">
+          {[0, 1].map((row) => (
+            <div key={`row-${row}`} className="flex gap-6 items-center">
               {[
                 {n:"Priya & Arjun", l:"Udaipur", q:"Shaadi Saga made our destination wedding effortless. 5 vendors, zero stress."},
                 {n:"Neha & Rohit", l:"Delhi NCR", q:"AI Matchmaker nailed our boho-chic vibe. Saved us 3 weeks of research."},
@@ -783,9 +786,11 @@ function Home() {
                 {n:"Anaya & Vihaan", l:"Mumbai", q:"Veena Nagda for mehendi was a dream. Verified badge is legit."},
                 {n:"Kiara & Rahul", l:"Jaipur", q:"From Sabyasachi to pandit ji — all in one place. Thank you Shaadi Saga!"},
                 {n:"Isha & Karan", l:"Goa", q:"Booked 3 vendors in one afternoon. That's the 2026 way."},
-              ].map((t, i) => (
-                <div key={i} className="bg-white border border-[var(--border)] rounded-2xl p-5 w-80 shadow-sm">
-                  <div className="flex items-center gap-1 text-[var(--gold)] mb-2">{[...Array(5)].map((_,i)=><Star key={i} size={13} className="fill-[var(--gold)]"/>)}</div>
+              ].map((t) => (
+                <div key={`${row}-${t.n}`} className="bg-white border border-[var(--border)] rounded-2xl p-5 w-80 shadow-sm">
+                  <div className="flex items-center gap-1 text-[var(--gold)] mb-2">
+                    {["s1","s2","s3","s4","s5"].map(s => <Star key={s} size={13} className="fill-[var(--gold)]"/>)}
+                  </div>
                   <p className="text-sm text-[var(--ink-2)] italic leading-relaxed font-display">"{t.q}"</p>
                   <div className="mt-3 flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-[var(--coral-wash)] text-[var(--coral)] flex items-center justify-center font-display font-700 text-sm">{t.n.charAt(0)}</div>
@@ -1246,7 +1251,9 @@ function AdminInbox() {
     try {
       const [q, s] = await Promise.all([axios.get(`${API}/queries`), axios.get(`${API}/queries/stats`)]);
       setQueries(q.data); setStats(s.data);
-    } catch(e) {}
+    } catch (err) {
+      console.error("Admin inbox load failed:", err);
+    }
     setLoading(false);
   };
   useEffect(() => { if (user?.role === "admin") load(); }, [user]);

@@ -295,28 +295,51 @@ async def get_real_weddings():
     return await db.real_weddings.find({}, {"_id": 0}).to_list(100)
 
 # ============ AI Matchmaker ============
-@api_router.post("/matchmaker", response_model=MatchmakerResponse)
-async def matchmaker(req: MatchmakerRequest):
-    query = {"starting_price": {"$lte": max(req.budget, 1)}}
-    if req.category: query["category"] = req.category
+def _build_candidate_query(req: MatchmakerRequest) -> dict:
+    q = {"starting_price": {"$lte": max(req.budget, 1)}}
+    if req.category:
+        q["category"] = req.category
     if req.city and req.city.lower() not in ["any", "anywhere", ""]:
-        query["city"] = {"$regex": req.city, "$options": "i"}
+        q["city"] = {"$regex": req.city, "$options": "i"}
+    return q
+
+
+async def _fetch_candidates(req: MatchmakerRequest) -> list:
+    query = _build_candidate_query(req)
     candidates = await db.vendors.find(query, {"_id": 0}).sort("rating", -1).to_list(30)
     if not candidates:
         query.pop("city", None)
         candidates = await db.vendors.find(query, {"_id": 0}).sort("rating", -1).to_list(30)
-    if not candidates:
-        return MatchmakerResponse(
-            reasoning="We couldn't find vendors matching your exact budget. Try increasing your budget or broadening location.",
-            recommendations=[],
-        )
-    try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-    except ImportError:
-        return MatchmakerResponse(
-            reasoning=f"Top vendors by rating within your budget of ₹{req.budget:,} for a {req.theme} {req.category or 'wedding'} in {req.city}.",
-            recommendations=candidates[:3],
-        )
+    return candidates
+
+
+def _strip_json_fence(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.strip("`").split("\n", 1)[1] if "\n" in text else text
+        if text.endswith("```"):
+            text = text[:-3]
+    if text.lstrip().startswith("json"):
+        text = text.lstrip()[4:]
+    return text.strip()
+
+
+def _order_by_ids(candidates: list, ids: list) -> list:
+    picked = [c for c in candidates if c["id"] in ids]
+    picked.sort(key=lambda r: ids.index(r["id"]) if r["id"] in ids else 99)
+    if len(picked) < 3:
+        extra = [c for c in candidates if c["id"] not in ids][: 3 - len(picked)]
+        picked.extend(extra)
+    return picked[:3]
+
+
+def _fallback_response(req: MatchmakerRequest, candidates: list, reason: str = "") -> MatchmakerResponse:
+    default = f"Top vendors matching ₹{req.budget:,} budget for {req.theme} vibe in {req.city}."
+    return MatchmakerResponse(reasoning=reason or default, recommendations=candidates[:3])
+
+
+async def _call_matchmaker_llm(req: MatchmakerRequest, candidates: list) -> MatchmakerResponse:
+    from emergentintegrations.llm.chat import LlmChat, UserMessage  # type: ignore
     compact = [{"id": c["id"], "name": c["name"], "category": c["category"], "city": c["city"],
                 "price": c["starting_price"], "rating": c["rating"], "tags": c["tags"],
                 "desc": c["description"][:140]} for c in candidates[:20]]
@@ -326,33 +349,39 @@ async def matchmaker(req: MatchmakerRequest):
         "Return ONLY a JSON object with keys: reasoning (2-3 sentence warm explanation in English with occasional Hindi wedding words like 'shaadi', 'dulhan'), "
         "and ids (an array of exactly 3 vendor id strings from the provided list). No markdown, no extra keys."
     )
-    user_text = (f"Bride's preferences:\n- Budget: ₹{req.budget:,}\n- Theme/Vibe: {req.theme}\n- City: {req.city}\n- Category: {req.category or 'any'}\n\n"
-                 f"Vendors (shortlist):\n{json.dumps(compact)}\n\nRespond with JSON only.")
+    user_text = (
+        f"Bride's preferences:\n- Budget: ₹{req.budget:,}\n- Theme/Vibe: {req.theme}\n"
+        f"- City: {req.city}\n- Category: {req.category or 'any'}\n\n"
+        f"Vendors (shortlist):\n{json.dumps(compact)}\n\nRespond with JSON only."
+    )
+    chat = LlmChat(
+        api_key=os.environ["EMERGENT_LLM_KEY"],
+        session_id=f"matchmaker-{uuid.uuid4()}",
+        system_message=system,
+    ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+    reply = await chat.send_message(UserMessage(text=user_text))
+    parsed = json.loads(_strip_json_fence(reply))
+    ids = parsed.get("ids", [])[:3]
+    reasoning = parsed.get("reasoning", "Here are your top 3 matches.")
+    return MatchmakerResponse(reasoning=reasoning, recommendations=_order_by_ids(candidates, ids))
+
+
+@api_router.post("/matchmaker", response_model=MatchmakerResponse)
+async def matchmaker(req: MatchmakerRequest):
+    candidates = await _fetch_candidates(req)
+    if not candidates:
+        return MatchmakerResponse(
+            reasoning="We couldn't find vendors matching your exact budget. Try increasing your budget or broadening location.",
+            recommendations=[],
+        )
     try:
-        chat = LlmChat(api_key=os.environ["EMERGENT_LLM_KEY"],
-                       session_id=f"matchmaker-{uuid.uuid4()}", system_message=system
-                       ).with_model("anthropic", "claude-sonnet-4-5-20250929")
-        reply = await chat.send_message(UserMessage(text=user_text))
-        text = reply.strip()
-        if text.startswith("```"):
-            text = text.strip("`").split("\n", 1)[1] if "\n" in text else text
-            if text.endswith("```"): text = text[:-3]
-        if text.lstrip().startswith("json"): text = text.lstrip()[4:]
-        parsed = json.loads(text.strip())
-        ids = parsed.get("ids", [])[:3]
-        reasoning = parsed.get("reasoning", "Here are your top 3 matches.")
-        recs = [c for c in candidates if c["id"] in ids]
-        recs_sorted = sorted(recs, key=lambda r: ids.index(r["id"]) if r["id"] in ids else 99)
-        if len(recs_sorted) < 3:
-            remaining = [c for c in candidates if c["id"] not in ids][: 3 - len(recs_sorted)]
-            recs_sorted.extend(remaining)
-        return MatchmakerResponse(reasoning=reasoning, recommendations=recs_sorted[:3])
+        return await _call_matchmaker_llm(req, candidates)
+    except ImportError:
+        return _fallback_response(req, candidates,
+            f"Top vendors by rating within your budget of ₹{req.budget:,} for a {req.theme} {req.category or 'wedding'} in {req.city}.")
     except Exception:
         logger.exception("Matchmaker LLM failed")
-        return MatchmakerResponse(
-            reasoning=f"Top vendors matching ₹{req.budget:,} budget for {req.theme} vibe in {req.city}.",
-            recommendations=candidates[:3],
-        )
+        return _fallback_response(req, candidates)
 
 @api_router.get("/")
 async def root(): return {"message": "Shaadi Saga India API", "version": "1.1"}
