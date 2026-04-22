@@ -577,8 +577,8 @@ function Home() {
           </div>
           <div className="relative fade-up delay-2">
             <div className="hero-canvas" data-testid="hero-motion">
-              {/* Ken Burns wedding image */}
-              <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1400&q=85" alt="Indian wedding" className="hero-img"/>
+              {/* Jaimala scene image with Ken Burns */}
+              <img src="/assets/jaimala.jpg" alt="Indian jaimala wedding scene" className="hero-img"/>
               <div className="hero-img-tint"/>
               <div className="light-sweep"/>
 
@@ -602,21 +602,13 @@ function Home() {
                 </div>
               ))}
 
-              {/* Centered script overlay */}
-              <div className="hero-center">
-                <div className="reveal-text mb-3 pulse-heart">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-white text-[10px] tracking-[0.3em] uppercase font-semibold">
-                    <Sparkles size={12}/> Shubh Vivah
-                  </div>
-                </div>
-                <h3 className="reveal-text r2 font-script shimmer-text text-6xl md:text-7xl leading-none drop-shadow-lg">Your shaadi,</h3>
-                <h3 className="reveal-text r3 font-display italic text-white text-2xl md:text-3xl mt-2" style={{textShadow:"0 2px 20px rgba(0,0,0,0.5)"}}>a story to cherish.</h3>
-                <div className="reveal-text r3 mt-6 flex gap-2 justify-center">
-                  <span className="w-12 h-0.5 bg-[var(--gold-soft)]"/>
-                  <span className="w-2 h-2 rounded-full bg-[var(--gold-soft)] -translate-y-0.5"/>
-                  <span className="w-12 h-0.5 bg-[var(--gold-soft)]"/>
-                </div>
-              </div>
+              {/* Floating congratulations around the couple */}
+              <div className="wish script" style={{top:"6%", left:"8%", animationDelay:"0.4s", "--r":"-4deg", "--dx":"6px", "--dy":"-4px"}}>Mubarak Ho!</div>
+              <div className="wish" style={{top:"10%", right:"6%", animationDelay:"0.8s", "--r":"3deg", "--dx":"-6px", "--dy":"4px"}}><span className="dot">❤</span> Congratulations</div>
+              <div className="wish script" style={{top:"34%", left:"2%", animationDelay:"1.2s", "--r":"-2deg", "--dx":"8px", "--dy":"0px"}}>Sada Suhagan Raho</div>
+              <div className="wish" style={{top:"42%", right:"3%", animationDelay:"1.6s", "--r":"4deg", "--dx":"-4px", "--dy":"6px"}}><span className="dot">✦</span> Khush raho, pyaar se bharpoor</div>
+              <div className="wish script" style={{bottom:"22%", left:"6%", animationDelay:"2.0s", "--r":"2deg", "--dx":"4px", "--dy":"-5px"}}>May your love last forever</div>
+              <div className="wish" style={{bottom:"14%", right:"8%", animationDelay:"2.4s", "--r":"-3deg", "--dx":"-7px", "--dy":"-3px"}}><span className="dot">✨</span> Blessings &amp; love</div>
 
               {/* Gold corner ornaments */}
               <svg className="absolute top-4 left-4 w-10 h-10 opacity-80 z-5" viewBox="0 0 40 40" fill="#FFE4B5">
