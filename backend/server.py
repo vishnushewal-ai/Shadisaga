@@ -392,15 +392,31 @@ async def root(): return {"message": "Shaadi Saga India API", "version": "1.1"}
 
 app.include_router(api_router)
 
-# CORS — credentials require explicit origin
-frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[frontend_url],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS — support comma-separated origins list. Auth uses cookies so we cannot use "*"
+# When credentials=True, allow_origins must list explicit origins.
+_raw_cors = os.environ.get("CORS_ORIGINS", "*").strip()
+_frontend_url = os.environ.get("FRONTEND_URL", "").strip()
+if _raw_cors and _raw_cors != "*":
+    _origins = [o.strip() for o in _raw_cors.split(",") if o.strip()]
+else:
+    _origins = [_frontend_url] if _frontend_url else ["*"]
+# If any origin is "*" we cannot allow credentials; fall back to allow_origin_regex.
+if "*" in _origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=".*",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
